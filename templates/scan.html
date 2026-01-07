@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Barcode - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">📱 Scan Barcode</h1>
+    <p class="text-gray-600">Scan a kid's wristband to record attendance</p>
+</div>
+
+<div class="max-w-2xl mx-auto">
+    <!-- Scanner Container -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div id="reader" class="w-full mb-4"></div>
+        
+        <div id="status-message" class="hidden p-4 rounded-lg mb-4"></div>
+        
+        <div class="text-center">
+            <button id="start-scan" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg">
+                Start Scanner
+            </button>
+            <button id="stop-scan" class="hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg">
+                Stop Scanner
+            </button>
+        </div>
+    </div>
+
+    <!-- Manual Entry Fallback -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Manual Barcode Entry</h3>
+        <form id="manual-form" class="flex gap-2">
+            <input type="text" id="manual-barcode" 
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter barcode (e.g., JT000001)"
+                   pattern="JT\d{6}">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+                Submit
+            </button>
+        </form>
+    </div>
+
+    <!-- Today's Count -->
+    <div class="mt-6 text-center">
+        <div class="bg-blue-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600">Scanned Today</p>
+            <p id="today-count" class="text-3xl font-bold text-blue-600">0</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+{% endblock %}

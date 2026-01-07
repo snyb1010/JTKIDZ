@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Today's Attendance - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Today's Attendance</h1>
+    <p class="text-gray-600">{{ date.strftime('%A, %B %d, %Y') }}</p>
+</div>
+
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Time</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Site</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Scanned By</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% if records %}
+                    {% for attendance, kid, user in records %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">{{ attendance.scan_time.strftime('%I:%M %p') }}</td>
+                        <td class="px-4 py-3 text-sm font-medium">{{ kid.full_name }}</td>
+                        <td class="px-4 py-3 text-sm">{{ kid.age }}</td>
+                        <td class="px-4 py-3 text-sm">{{ kid.site }}</td>
+                        <td class="px-4 py-3 text-sm font-mono">{{ kid.barcode }}</td>
+                        <td class="px-4 py-3 text-sm">{{ user.name }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                            No attendance recorded yet today. <a href="{{ url_for('attendance.scan_page') }}" class="text-blue-600 hover:underline">Start scanning</a>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-4 flex justify-between items-center">
+    <p class="text-gray-600">Total: {{ records|length }} attendance(s)</p>
+    <a href="{{ url_for('attendance.scan_page') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg">
+        📱 Scan More
+    </a>
+</div>
+{% endblock %}

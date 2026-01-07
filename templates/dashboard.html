@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+    <p class="text-gray-600">Welcome, {{ current_user_name }}!</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Total Active Kids</p>
+                <p class="text-3xl font-bold text-blue-600">{{ stats.total_kids }}</p>
+            </div>
+            <div class="bg-blue-100 rounded-full p-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Attendance Today</p>
+                <p class="text-3xl font-bold text-green-600">{{ stats.attendance_today }}</p>
+            </div>
+            <div class="bg-green-100 rounded-full p-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Active Sites</p>
+                <p class="text-3xl font-bold text-purple-600">{{ stats.active_sites }}</p>
+            </div>
+            <div class="bg-purple-100 rounded-full p-4">
+                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="{{ url_for('attendance.scan_page') }}" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg text-center transition duration-200">
+            📱 Scan Barcode
+        </a>
+        {% if current_user_role == 'admin' %}
+        <a href="{{ url_for('kids.add_kid') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-6 rounded-lg text-center transition duration-200">
+            ➕ Add Kid
+        </a>
+        <a href="{{ url_for('reports.site_report') }}" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-4 px-6 rounded-lg text-center transition duration-200">
+            📊 Reports
+        </a>
+        <a href="{{ url_for('kids.bulk_barcodes') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg text-center transition duration-200">
+            🖨️ Print Barcodes
+        </a>
+        {% endif %}
+        <a href="{{ url_for('attendance.today_attendance') }}" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-4 px-6 rounded-lg text-center transition duration-200">
+            📋 Today's List
+        </a>
+    </div>
+</div>
+
+{% if recent_attendance %}
+<div class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Attendance Today</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Time</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Age</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Site</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for attendance, kid in recent_attendance %}
+                <tr>
+                    <td class="px-4 py-2 text-sm">{{ attendance.scan_time.strftime('%I:%M %p') }}</td>
+                    <td class="px-4 py-2 text-sm font-medium">{{ kid.full_name }}</td>
+                    <td class="px-4 py-2 text-sm">{{ kid.age }}</td>
+                    <td class="px-4 py-2 text-sm">{{ kid.site }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

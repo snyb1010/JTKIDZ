@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Report - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">📅 Monthly Attendance Summary</h1>
+</div>
+
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <form method="GET" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Site</label>
+                <select name="site" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Sites</option>
+                    {% for s in sites %}
+                    <option value="{{ s }}" {% if s == current_site %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                <select name="month" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select Month</option>
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if i|string == current_month %}selected{% endif %}>
+                        {{ ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i-1] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <select name="year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {% for y in range(2024, 2031) %}
+                    <option value="{{ y }}" {% if y|string == current_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+                Generate Report
+            </button>
+            {% if summary %}
+            <a href="{{ url_for('reports.export_report', type='monthly', site=current_site, month=current_month, year=current_year) }}" 
+               class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg">
+                📤 Export to Excel
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+{% if summary %}
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Site</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">Attendance Count</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for kid, count in summary %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm font-medium">{{ kid.full_name }}</td>
+                    <td class="px-4 py-3 text-sm">{{ kid.age }}</td>
+                    <td class="px-4 py-3 text-sm">{{ kid.site }}</td>
+                    <td class="px-4 py-3 text-sm font-mono">{{ kid.barcode }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="{% if count == 0 %}text-red-600{% elif count < 3 %}text-yellow-600{% else %}text-green-600{% endif %} font-bold text-lg">
+                            {{ count }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-4 text-gray-600">
+    <p>Total Kids: {{ summary|length }}</p>
+    <p class="text-sm mt-2">
+        <span class="text-green-600">● Green (3+)</span> = Good attendance |
+        <span class="text-yellow-600">● Yellow (1-2)</span> = Low attendance |
+        <span class="text-red-600">● Red (0)</span> = No attendance
+    </p>
+</div>
+{% endif %}
+{% endblock %}

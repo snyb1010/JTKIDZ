@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{% if kid %}Edit Kid{% else %}Add Kid{% endif %} - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">{% if kid %}Edit Kid{% else %}Add New Kid{% endif %}</h1>
+</div>
+
+<div class="max-w-2xl">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <form method="POST">
+            <div class="mb-4">
+                <label for="full_name" class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                <input type="text" id="full_name" name="full_name" required
+                       value="{% if kid %}{{ kid.full_name }}{% endif %}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Juan Dela Cruz">
+            </div>
+
+            <div class="mb-4">
+                <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age *</label>
+                <input type="number" id="age" name="age" required min="1" max="25"
+                       value="{% if kid %}{{ kid.age }}{% endif %}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="10">
+            </div>
+
+            <div class="mb-4">
+                <label for="site" class="block text-sm font-medium text-gray-700 mb-2">Site / Barangay *</label>
+                <input type="text" id="site" name="site" required
+                       value="{% if kid %}{{ kid.site }}{% endif %}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Barangay San Pedro"
+                       list="sites">
+                <datalist id="sites">
+                    <option value="Barangay San Pedro">
+                    <option value="Barangay Tagburos">
+                    <option value="Barangay Bancao-Bancao">
+                    <option value="Barangay Manalo">
+                    <option value="Barangay Mabuhay">
+                </datalist>
+            </div>
+
+            {% if kid %}
+            <div class="mb-4">
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                <select id="status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="active" {% if kid.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if kid.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-700"><strong>Barcode:</strong> {{ kid.barcode }}</p>
+                <p class="text-sm text-gray-700"><strong>Created:</strong> {{ kid.created_at.strftime('%Y-%m-%d') }}</p>
+            </div>
+            {% endif %}
+
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+                    {% if kid %}Update Kid{% else %}Add Kid{% endif %}
+                </button>
+                <a href="{{ url_for('kids.list_kids') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

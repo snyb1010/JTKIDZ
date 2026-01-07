@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{% if bulk %}Bulk Barcodes{% else %}Barcode{% endif %} - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="no-print mb-6 flex justify-between items-center">
+    <h1 class="text-3xl font-bold text-gray-800">{% if bulk %}Bulk Barcodes for Printing{% else %}Barcode - {{ kid.full_name }}{% endif %}</h1>
+    <div class="space-x-2">
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+            🖨️ Print
+        </button>
+        <a href="{{ url_for('kids.list_kids') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg inline-block">
+            Back to List
+        </a>
+    </div>
+</div>
+
+{% if bulk %}
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {% for k in kids %}
+        <div class="bg-white rounded-lg shadow-md p-4 text-center border-2 border-gray-200">
+            <h3 class="font-bold text-lg mb-2">{{ k.full_name }}</h3>
+            <p class="text-sm text-gray-600 mb-2">{{ k.site }} • Age {{ k.age }}</p>
+            <img src="{{ url_for('static', filename='img/barcodes/' ~ k.barcode ~ '_' ~ k.full_name.replace(' ', '_') ~ '.png') }}" 
+                 alt="{{ k.barcode }}" 
+                 class="w-full max-w-xs mx-auto"
+                 onerror="this.parentElement.innerHTML='<p class=text-red-500>Barcode not generated</p>'">
+            <p class="font-mono text-sm mt-2">{{ k.barcode }}</p>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="max-w-md mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+            <h2 class="text-2xl font-bold mb-2">{{ kid.full_name }}</h2>
+            <p class="text-gray-600 mb-4">{{ kid.site }} • Age {{ kid.age }}</p>
+            
+            <div class="mb-4">
+                <img src="{{ url_for('static', filename='img/barcodes/' ~ kid.barcode ~ '_' ~ kid.full_name.replace(' ', '_') ~ '.png') }}" 
+                     alt="{{ kid.barcode }}" 
+                     class="w-full max-w-sm mx-auto"
+                     onerror="this.parentElement.innerHTML='<p class=text-red-500>Barcode not generated yet. Please regenerate.</p>'">
+            </div>
+            
+            <p class="font-mono text-xl font-bold">{{ kid.barcode }}</p>
+            
+            <div class="mt-6 text-sm text-gray-500">
+                <p>Status: {{ kid.status|capitalize }}</p>
+                <p>Created: {{ kid.created_at.strftime('%B %d, %Y') }}</p>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<style>
+    @media print {
+        body { background: white; }
+        .grid { gap: 10px; }
+        .shadow-md { box-shadow: none !important; }
+    }
+</style>
+{% endblock %}
