@@ -46,11 +46,14 @@ def attendance_summary():
     
     for attendance, kid, user in records:
         site = kid.site
-        record_data = {
-            'kid': kid,
-            'attendance': attendance,
-            'user': user
-        }
+        # Create a simple object-like dict that the template can access
+        class RecordWrapper:
+            def __init__(self, attendance, kid, user):
+                self.kid = kid
+                self.created_at = attendance.created_at
+                self.user = user
+        
+        record_data = RecordWrapper(attendance, kid, user)
         
         sites_data[site]['all'].append(record_data)
         sites_data[site]['total'] += 1
