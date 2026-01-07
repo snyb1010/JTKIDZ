@@ -23,10 +23,14 @@
         </div>
         <div>
             <a href="{{ url_for('attendance.today_attendance') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded-lg inline-block">
-                Today
+                Refresh
             </a>
         </div>
     </form>
+    <div class="mt-4 text-center">
+        <p class="text-sm text-gray-500">Current Philippines Time</p>
+        <p id="current-time" class="text-lg font-semibold text-gray-700"></p>
+    </div>
 </div>
 
 <!-- Attendance Summary Card -->
@@ -107,4 +111,29 @@
         📱 Scan Barcode
     </a>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateClock() {
+    const now = new Date();
+    const options = { 
+        timeZone: 'Asia/Manila',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    };
+    const dateTimeString = now.toLocaleString('en-US', options);
+    document.getElementById('current-time').textContent = dateTimeString;
+}
+
+// Update immediately and then every second
+updateClock();
+setInterval(updateClock, 1000);
+</script>
 {% endblock %}
