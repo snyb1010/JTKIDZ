@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+import pytz
 
 class Config:
     """Application configuration"""
@@ -12,6 +13,9 @@ class Config:
     
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'img', 'barcodes')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    
+    # Timezone - Philippines
+    TIMEZONE = pytz.timezone('Asia/Manila')
     
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)

@@ -1,10 +1,20 @@
-from flask import Blueprint, render_template, request, jsonify, session
+from flask import Blueprint, render_template, request, jsonify, session, current_app
 from models import Kid, Attendance, User
 from database import db
 from blueprints.auth import login_required
 from datetime import datetime, date
 
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
+
+def get_current_datetime():
+    """Get current datetime in Philippines timezone"""
+    from config import Config
+    utc_now = datetime.utcnow()
+    return Config.TIMEZONE.localize(datetime.utcnow()).astimezone(Config.TIMEZONE)
+
+def get_current_date():
+    """Get current date in Philippines timezone"""
+    return get_current_datetime().date()
 
 @attendance_bp.route('/scan')
 @login_required
@@ -40,8 +50,8 @@ def record_attendance():
             'wrong_site': True
         }), 403
     
-    # Check if already scanned today
-    today = date.today()
+    # Check if already scanned today (using Philippines time)
+    today = get_current_date()
     existing = Attendance.query.filter_by(
         kid_id=kid.id,
         scan_date=today
@@ -54,12 +64,12 @@ def record_attendance():
             'already_scanned': True
         }), 400
     
-    # Record attendance
-    now = datetime.now()
+    # Record attendance (using Philippines time)
+    now = get_current_datetime()
     attendance = Attendance(
         kid_id=kid.id,
         site=kid.site,
-        scan_date=today,
+        scan_date=now.date(),
         scan_time=now.time(),
         scanned_by=session['user_id']
     )
@@ -80,15 +90,15 @@ def record_attendance():
 @login_required
 def today_attendance():
     """View attendance with date filter and site filtering for workers"""
-    # Get date from query params or use today
+    # Get date from query params or use today (Philippines time)
     selected_date = request.args.get('date', '')
     if selected_date:
         try:
             view_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
         except:
-            view_date = date.today()
+            view_date = get_current_date()
     else:
-        view_date = date.today()
+        view_date = get_current_date()
     
     # Get current user and filter by assigned sites for workers
     current_user = User.query.get(session['user_id'])

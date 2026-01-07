@@ -7,8 +7,13 @@ from blueprints.kids import kids_bp
 from blueprints.attendance import attendance_bp
 from blueprints.reports import reports_bp
 from blueprints.users import users_bp
-from datetime import date
+from datetime import datetime
 import os
+
+def get_current_date():
+    """Get current date in Philippines timezone"""
+    utc_now = datetime.utcnow()
+    return Config.TIMEZONE.localize(utc_now).astimezone(Config.TIMEZONE).date()
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -37,9 +42,9 @@ def index():
 @login_required
 def dashboard():
     """Main dashboard"""
-    # Get statistics
+    # Get statistics (using Philippines time)
     total_kids = Kid.query.filter_by(status='active').count()
-    today = date.today()
+    today = get_current_date()
     attendance_today = Attendance.query.filter_by(scan_date=today).count()
     
     # Get unique sites
