@@ -12,8 +12,7 @@ import os
 
 def get_current_date():
     """Get current date in Philippines timezone"""
-    utc_now = datetime.utcnow()
-    return Config.TIMEZONE.localize(utc_now).astimezone(Config.TIMEZONE).date()
+    return datetime.now(Config.TIMEZONE).date()
 
 app = Flask(__name__)
 app.config.from_object(Config)
