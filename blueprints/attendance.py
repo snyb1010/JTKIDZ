@@ -9,8 +9,7 @@ attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
 def get_current_datetime():
     """Get current datetime in Philippines timezone"""
     from config import Config
-    utc_now = datetime.utcnow()
-    return Config.TIMEZONE.localize(datetime.utcnow()).astimezone(Config.TIMEZONE)
+    return datetime.now(Config.TIMEZONE)
 
 def get_current_date():
     """Get current date in Philippines timezone"""
