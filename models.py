@@ -1,6 +1,7 @@
 from database import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+import json
 
 class User(db.Model):
     """User model for admin and staff"""
@@ -11,6 +12,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='staff')  # 'admin' or 'staff'
+    assigned_sites = db.Column(db.Text, nullable=True)  # JSON array of assigned sites for staff
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -20,6 +22,31 @@ class User(db.Model):
     def check_password(self, password):
         """Verify password"""
         return check_password_hash(self.password, password)
+    
+    def get_assigned_sites(self):
+        """Get list of assigned sites"""
+        if self.role == 'admin':
+            return []  # Admin has access to all sites
+        if not self.assigned_sites:
+            return []
+        try:
+            return json.loads(self.assigned_sites)
+        except:
+            return []
+    
+    def set_assigned_sites(self, sites_list):
+        """Set assigned sites as JSON"""
+        if sites_list:
+            self.assigned_sites = json.dumps(sites_list)
+        else:
+            self.assigned_sites = None
+    
+    def can_access_site(self, site):
+        """Check if user can access a specific site"""
+        if self.role == 'admin':
+            return True
+        sites = self.get_assigned_sites()
+        return site in sites
     
     def __repr__(self):
         return f'<User {self.email}>'

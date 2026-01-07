@@ -31,6 +31,15 @@ def record_attendance():
     if kid.status != 'active':
         return jsonify({'success': False, 'message': f'{kid.full_name} is inactive.'}), 400
     
+    # Check if staff user can access this site
+    current_user = User.query.get(session['user_id'])
+    if not current_user.can_access_site(kid.site):
+        return jsonify({
+            'success': False,
+            'message': f'❌ {kid.full_name} is from {kid.site}. You are not assigned to this site.',
+            'wrong_site': True
+        }), 403
+    
     # Check if already scanned today
     today = date.today()
     existing = Attendance.query.filter_by(

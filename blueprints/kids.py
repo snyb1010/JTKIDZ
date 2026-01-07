@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from models import Kid
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from models import Kid, User
 from database import db
 from blueprints.auth import login_required, admin_required
 from services.barcode_service import generate_barcode
@@ -14,7 +14,19 @@ def list_kids():
     status_filter = request.args.get('status', 'active')
     age_group_filter = request.args.get('age_group', '')
     
+    # Get current user and their site access
+    current_user = User.query.get(session['user_id'])
+    
     query = Kid.query
+    
+    # Filter by staff's assigned sites (staff can only see their sites)
+    if current_user.role == 'staff':
+        assigned_sites = current_user.get_assigned_sites()
+        if assigned_sites:
+            query = query.filter(Kid.site.in_(assigned_sites))
+        else:
+            # Staff with no assigned sites sees nothing
+            query = query.filter(Kid.id == -1)
     
     if site_filter:
         query = query.filter_by(site=site_filter)
@@ -32,7 +44,15 @@ def list_kids():
         query = query.filter((Kid.age < 3) | (Kid.age > 14))
     
     kids = query.order_by(Kid.full_name).all()
-    sites = db.session.query(Kid.site).distinct().all()
+    
+    # Get sites based on user role
+    if current_user.role == 'admin':
+        sites = db.session.query(Kid.site).distinct().order_by(Kid.site).all()
+    else:
+        # Staff only sees their assigned sites
+        assigned_sites = current_user.get_assigned_sites()
+        sites = [(s,) for s in assigned_sites]
+    
     sites = [s[0] for s in sites]
     
     return render_template('kids_list.html', kids=kids, sites=sites, 

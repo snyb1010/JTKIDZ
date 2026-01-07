@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Workers Management - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Workers Management</h1>
+        <a href="{{ url_for('users.add_user') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+            ➕ Add New Worker
+        </a>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Assigned Sites</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Created</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% if users %}
+                    {% for user in users %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm font-medium">{{ user.name }}</td>
+                        <td class="px-4 py-3 text-sm">{{ user.email }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if user.sites_list %}
+                                <div class="flex flex-wrap gap-1">
+                                    {% for site in user.sites_list %}
+                                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">{{ site }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400 italic">No sites assigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-500">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <div class="flex space-x-2">
+                                <a href="{{ url_for('users.edit_user', user_id=user.id) }}" class="text-yellow-600 hover:text-yellow-800" title="Edit">✏️</a>
+                                <a href="{{ url_for('users.delete_user', user_id=user.id) }}" class="text-red-600 hover:text-red-800" onclick="return confirm('Delete this worker? This action cannot be undone.')" title="Delete">❌</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            No workers found. Click "Add New Worker" to create one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <h3 class="font-semibold text-blue-800 mb-2">💡 About Workers</h3>
+    <ul class="text-sm text-blue-700 space-y-1">
+        <li>• Workers can only scan kids from their assigned sites</li>
+        <li>• Workers can only view kids from their assigned sites</li>
+        <li>• You can assign multiple sites to one worker (e.g., BM and Honda Bay)</li>
+        <li>• Admin has access to all sites and all features</li>
+    </ul>
+</div>
+{% endblock %}
