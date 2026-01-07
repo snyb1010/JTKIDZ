@@ -5,8 +5,87 @@ from blueprints.auth import login_required, admin_required
 from services.export_service import export_to_excel
 from datetime import datetime, date
 from sqlalchemy import func, extract
+from collections import defaultdict
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
+
+@reports_bp.route('/attendance-summary')
+@admin_required
+def attendance_summary():
+    """Admin attendance summary grouped by site with age breakdown"""
+    # Get date from query params or use today
+    selected_date = request.args.get('date', '')
+    if selected_date:
+        try:
+            view_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        except:
+            from blueprints.attendance import get_current_date
+            view_date = get_current_date()
+    else:
+        from blueprints.attendance import get_current_date
+        view_date = get_current_date()
+    
+    # Get all attendance for selected date
+    records = db.session.query(Attendance, Kid, User).join(Kid).join(User, Attendance.scanned_by == User.id).filter(
+        Attendance.scan_date == view_date
+    ).order_by(Kid.site, Attendance.scan_time).all()
+    
+    # Group by site
+    sites_data = defaultdict(lambda: {
+        'all': [],
+        'kids': [],
+        'risers': [],
+        'teens': [],
+        'other': [],
+        'total': 0,
+        'kids_count': 0,
+        'risers_count': 0,
+        'teens_count': 0,
+        'other_count': 0
+    })
+    
+    for attendance, kid, user in records:
+        site = kid.site
+        record_data = {
+            'kid': kid,
+            'attendance': attendance,
+            'user': user
+        }
+        
+        sites_data[site]['all'].append(record_data)
+        sites_data[site]['total'] += 1
+        
+        # Group by age
+        if 3 <= kid.age <= 8:
+            sites_data[site]['kids'].append(record_data)
+            sites_data[site]['kids_count'] += 1
+        elif 9 <= kid.age <= 11:
+            sites_data[site]['risers'].append(record_data)
+            sites_data[site]['risers_count'] += 1
+        elif 12 <= kid.age <= 14:
+            sites_data[site]['teens'].append(record_data)
+            sites_data[site]['teens_count'] += 1
+        else:
+            sites_data[site]['other'].append(record_data)
+            sites_data[site]['other_count'] += 1
+    
+    # Calculate overall totals
+    overall = {
+        'total': sum(data['total'] for data in sites_data.values()),
+        'kids_count': sum(data['kids_count'] for data in sites_data.values()),
+        'risers_count': sum(data['risers_count'] for data in sites_data.values()),
+        'teens_count': sum(data['teens_count'] for data in sites_data.values()),
+        'other_count': sum(data['other_count'] for data in sites_data.values())
+    }
+    
+    # Sort sites alphabetically
+    sorted_sites = dict(sorted(sites_data.items()))
+    
+    return render_template('reports_attendance_summary.html', 
+                          sites_data=sorted_sites,
+                          overall=overall,
+                          date=view_date,
+                          selected_date=selected_date)
 
 @reports_bp.route('/site')
 @admin_required
