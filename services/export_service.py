@@ -47,7 +47,7 @@ def export_site_report(site, start_date, end_date):
         Attendance.scan_date,
         Attendance.scan_time,
         User.name.label('scanned_by')
-    ).join(Attendance).join(User, Attendance.scanned_by == User.id)
+    ).join(Attendance, Kid.id == Attendance.kid_id).join(User, Attendance.scanned_by == User.id)
     
     if site:
         query = query.filter(Kid.site == site)
