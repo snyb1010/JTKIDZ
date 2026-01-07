@@ -1,6 +1,31 @@
 let html5QrCode;
 let todayCount = 0;
 
+// Update realtime clock
+function updateClock() {
+    const now = new Date();
+    
+    // Format time (HH:MM:SS AM/PM)
+    const hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    
+    const timeString = `${displayHours}:${minutes}:${seconds} ${ampm}`;
+    
+    // Format date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateString = now.toLocaleDateString('en-US', options);
+    
+    document.getElementById('realtime-clock').textContent = timeString;
+    document.getElementById('realtime-date').textContent = dateString;
+}
+
+// Start clock updates
+setInterval(updateClock, 1000);
+updateClock(); // Initial call
+
 // Show status message
 function showMessage(message, type) {
     const statusDiv = document.getElementById('status-message');
@@ -10,7 +35,7 @@ function showMessage(message, type) {
         type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
         'bg-blue-100 text-blue-800'
     }`;
-    statusDiv.textContent = message;
+    statusDiv.innerHTML = message;
     statusDiv.classList.remove('hidden');
     
     setTimeout(() => {
@@ -32,7 +57,17 @@ async function submitBarcode(barcode) {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            showMessage(`✅ ${data.message}`, 'success');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            showMessage(`
+                <div class="text-center">
+                    <p class="text-2xl font-bold mb-2">✅ ${data.kid_name}</p>
+                    <p class="text-lg">Age: ${data.age} | Site: ${data.site}</p>
+                    <p class="text-xl font-bold mt-2">Time: ${timeStr}</p>
+                </div>
+            `, 'success');
+            
             todayCount++;
             document.getElementById('today-count').textContent = todayCount;
             
@@ -47,7 +82,7 @@ async function submitBarcode(barcode) {
                 oscillator.stop(audioContext.currentTime + 0.1);
             }
         } else {
-            showMessage(data.message || 'Error recording attendance', 'error');
+            showMessage(`<p class="text-lg font-bold">${data.message}</p>`, 'error');
         }
     } catch (error) {
         showMessage('Network error. Please check connection.', 'error');
