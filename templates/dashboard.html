@@ -53,6 +53,26 @@
     </div>
 </div>
 
+<!-- Age Group Breakdown -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-4 text-white">
+        <p class="text-sm opacity-90">Kids (3-8)</p>
+        <p class="text-2xl font-bold">{{ stats.kids_count or 0 }}</p>
+    </div>
+    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-4 text-white">
+        <p class="text-sm opacity-90">Risers (9-11)</p>
+        <p class="text-2xl font-bold">{{ stats.risers_count or 0 }}</p>
+    </div>
+    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-4 text-white">
+        <p class="text-sm opacity-90">Teens (12-14)</p>
+        <p class="text-2xl font-bold">{{ stats.teens_count or 0 }}</p>
+    </div>
+    <div class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg shadow-md p-4 text-white">
+        <p class="text-sm opacity-90">Other</p>
+        <p class="text-2xl font-bold">{{ stats.other_count or 0 }}</p>
+    </div>
+</div>
+
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
     <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

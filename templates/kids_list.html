@@ -24,6 +24,16 @@
             </select>
         </div>
         <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Age Group</label>
+            <select name="age_group" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Age Groups</option>
+                <option value="kids" {% if current_age_group == 'kids' %}selected{% endif %}>Kids (3-8)</option>
+                <option value="risers" {% if current_age_group == 'risers' %}selected{% endif %}>Risers (9-11)</option>
+                <option value="teens" {% if current_age_group == 'teens' %}selected{% endif %}>Teens (12-14)</option>
+                <option value="other" {% if current_age_group == 'other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="flex-1 min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
@@ -47,6 +57,7 @@
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Barcode</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age Group</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Site</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
@@ -59,6 +70,11 @@
                         <td class="px-4 py-3 text-sm font-mono">{{ kid.barcode }}</td>
                         <td class="px-4 py-3 text-sm font-medium">{{ kid.full_name }}</td>
                         <td class="px-4 py-3 text-sm">{{ kid.age }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="{% if kid.age_group == 'Kids (3-8)' %}bg-blue-100 text-blue-800{% elif kid.age_group == 'Risers (9-11)' %}bg-green-100 text-green-800{% elif kid.age_group == 'Teens (12-14)' %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-800{% endif %} text-xs font-semibold px-2 py-1 rounded">
+                                {{ kid.age_group }}
+                            </span>
+                        </td>
                         <td class="px-4 py-3 text-sm">{{ kid.site }}</td>
                         <td class="px-4 py-3 text-sm">
                             {% if kid.status == 'active' %}

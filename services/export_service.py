@@ -26,6 +26,17 @@ def export_to_excel(report_type, site='', start_date='', end_date='', month='', 
     else:
         return export_site_report(site, start_date, end_date)
 
+def get_age_group(age):
+    """Return age group category"""
+    if 3 <= age <= 8:
+        return 'Kids (3-8)'
+    elif 9 <= age <= 11:
+        return 'Risers (9-11)'
+    elif 12 <= age <= 14:
+        return 'Teens (12-14)'
+    else:
+        return 'Other'
+
 def export_site_report(site, start_date, end_date):
     """Export site/date filtered attendance report"""
     query = db.session.query(
@@ -47,12 +58,13 @@ def export_site_report(site, start_date, end_date):
     
     results = query.order_by(Attendance.scan_date.desc(), Attendance.scan_time.desc()).all()
     
-    # Convert to DataFrame
+    # Convert to DataFrame with age groups
     data = []
     for r in results:
         data.append({
             'Name': r.full_name,
             'Age': r.age,
+            'Age Group': get_age_group(r.age),
             'Site': r.site,
             'Barcode': r.barcode,
             'Date': r.scan_date.strftime('%Y-%m-%d'),
@@ -62,23 +74,27 @@ def export_site_report(site, start_date, end_date):
     
     df = pd.DataFrame(data)
     
+    if df.empty:
+        # Create empty DataFrame with headers
+        df = pd.DataFrame(columns=['Name', 'Age', 'Age Group', 'Site', 'Barcode', 'Date', 'Time', 'Scanned By'])
+    
     # Create temporary file
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
     
-    # Write to Excel
+    # Write to Excel with formatting
     with pd.ExcelWriter(temp_file.name, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Attendance Report', index=False)
         
         # Auto-adjust column widths
         worksheet = writer.sheets['Attendance Report']
         for idx, col in enumerate(df.columns):
-            max_length = max(df[col].astype(str).map(len).max(), len(col)) + 2
+            max_length = max(df[col].astype(str).map(len).max(), len(col)) + 2 if len(df) > 0 else len(col) + 2
             worksheet.column_dimensions[chr(65 + idx)].width = max_length
     
     return temp_file.name
 
 def export_monthly_report(site, month, year):
-    """Export monthly attendance summary per child"""
+    """Export monthly attendance summary per child with age groups"""
     query = db.session.query(
         Kid.full_name,
         Kid.age,
@@ -97,7 +113,7 @@ def export_monthly_report(site, month, year):
     query = query.filter(Kid.status == 'active')
     results = query.group_by(Kid.id).order_by(Kid.site, Kid.full_name).all()
     
-    # Convert to DataFrame
+    # Convert to DataFrame with age groups
     data = []
     month_name = datetime(int(year), int(month), 1).strftime('%B %Y')
     
@@ -105,6 +121,7 @@ def export_monthly_report(site, month, year):
         data.append({
             'Name': r.full_name,
             'Age': r.age,
+            'Age Group': get_age_group(r.age),
             'Site': r.site,
             'Barcode': r.barcode,
             f'Attendance Count ({month_name})': r.attendance_count
@@ -112,17 +129,30 @@ def export_monthly_report(site, month, year):
     
     df = pd.DataFrame(data)
     
+    if df.empty:
+        # Create empty DataFrame with headers
+        df = pd.DataFrame(columns=['Name', 'Age', 'Age Group', 'Site', 'Barcode', f'Attendance Count ({month_name})'])
+    
     # Create temporary file
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
     
-    # Write to Excel
+    # Write to Excel with separate sheets by age group
     with pd.ExcelWriter(temp_file.name, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Monthly Summary', index=False)
+        # All data sheet
+        df.to_excel(writer, sheet_name='All', index=False)
         
-        # Auto-adjust column widths
-        worksheet = writer.sheets['Monthly Summary']
-        for idx, col in enumerate(df.columns):
-            max_length = max(df[col].astype(str).map(len).max(), len(col)) + 2
-            worksheet.column_dimensions[chr(65 + idx)].width = max_length
+        # Separate sheets by age group
+        if not df.empty:
+            for age_group in ['Kids (3-8)', 'Risers (9-11)', 'Teens (12-14)', 'Other']:
+                group_df = df[df['Age Group'] == age_group]
+                if not group_df.empty:
+                    group_df.to_excel(writer, sheet_name=age_group, index=False)
+        
+        # Auto-adjust column widths for all sheets
+        for sheet_name in writer.sheets:
+            worksheet = writer.sheets[sheet_name]
+            for idx, col in enumerate(df.columns):
+                max_length = max(df[col].astype(str).map(len).max(), len(col)) + 2 if len(df) > 0 else len(col) + 2
+                worksheet.column_dimensions[chr(65 + idx)].width = max_length
     
     return temp_file.name

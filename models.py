@@ -40,6 +40,18 @@ class Kid(db.Model):
     # Relationship to attendance
     attendance_records = db.relationship('Attendance', backref='kid', lazy=True)
     
+    @property
+    def age_group(self):
+        """Return age group category"""
+        if 3 <= self.age <= 8:
+            return 'Kids (3-8)'
+        elif 9 <= self.age <= 11:
+            return 'Risers (9-11)'
+        elif 12 <= self.age <= 14:
+            return 'Teens (12-14)'
+        else:
+            return 'Other'
+    
     def __repr__(self):
         return f'<Kid {self.full_name} - {self.barcode}>'
 

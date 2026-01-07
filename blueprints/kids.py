@@ -9,9 +9,10 @@ kids_bp = Blueprint('kids', __name__, url_prefix='/kids')
 @kids_bp.route('/')
 @login_required
 def list_kids():
-    """List all kids"""
+    """List all kids with age group filtering"""
     site_filter = request.args.get('site', '')
     status_filter = request.args.get('status', 'active')
+    age_group_filter = request.args.get('age_group', '')
     
     query = Kid.query
     
@@ -20,12 +21,23 @@ def list_kids():
     if status_filter:
         query = query.filter_by(status=status_filter)
     
+    # Filter by age group
+    if age_group_filter == 'kids':
+        query = query.filter(Kid.age >= 3, Kid.age <= 8)
+    elif age_group_filter == 'risers':
+        query = query.filter(Kid.age >= 9, Kid.age <= 11)
+    elif age_group_filter == 'teens':
+        query = query.filter(Kid.age >= 12, Kid.age <= 14)
+    elif age_group_filter == 'other':
+        query = query.filter((Kid.age < 3) | (Kid.age > 14))
+    
     kids = query.order_by(Kid.full_name).all()
     sites = db.session.query(Kid.site).distinct().all()
     sites = [s[0] for s in sites]
     
     return render_template('kids_list.html', kids=kids, sites=sites, 
-                          current_site=site_filter, current_status=status_filter)
+                          current_site=site_filter, current_status=status_filter,
+                          current_age_group=age_group_filter)
 
 @kids_bp.route('/add', methods=['GET', 'POST'])
 @admin_required

@@ -44,6 +44,12 @@ def dashboard():
     sites = db.session.query(Kid.site).distinct().all()
     active_sites = len(sites)
     
+    # Age group counts
+    kids_count = Kid.query.filter_by(status='active').filter(Kid.age >= 3, Kid.age <= 8).count()
+    risers_count = Kid.query.filter_by(status='active').filter(Kid.age >= 9, Kid.age <= 11).count()
+    teens_count = Kid.query.filter_by(status='active').filter(Kid.age >= 12, Kid.age <= 14).count()
+    other_count = Kid.query.filter_by(status='active').filter((Kid.age < 3) | (Kid.age > 14)).count()
+    
     # Recent attendance
     recent_attendance = db.session.query(Attendance, Kid).join(Kid).filter(
         Attendance.scan_date == today
@@ -52,7 +58,11 @@ def dashboard():
     stats = {
         'total_kids': total_kids,
         'attendance_today': attendance_today,
-        'active_sites': active_sites
+        'active_sites': active_sites,
+        'kids_count': kids_count,
+        'risers_count': risers_count,
+        'teens_count': teens_count,
+        'other_count': other_count
     }
     
     return render_template('dashboard.html', stats=stats, recent_attendance=recent_attendance)
