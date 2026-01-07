@@ -79,10 +79,33 @@ def record_attendance():
 @attendance_bp.route('/today')
 @login_required
 def today_attendance():
-    """View today's attendance"""
-    today = date.today()
-    records = db.session.query(Attendance, Kid, User).join(Kid).join(User, Attendance.scanned_by == User.id).filter(
-        Attendance.scan_date == today
-    ).order_by(Attendance.scan_time.desc()).all()
+    """View attendance with date filter and site filtering for workers"""
+    # Get date from query params or use today
+    selected_date = request.args.get('date', '')
+    if selected_date:
+        try:
+            view_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        except:
+            view_date = date.today()
+    else:
+        view_date = date.today()
     
-    return render_template('attendance_today.html', records=records, date=today)
+    # Get current user and filter by assigned sites for workers
+    current_user = User.query.get(session['user_id'])
+    
+    query = db.session.query(Attendance, Kid, User).join(Kid).join(User, Attendance.scanned_by == User.id).filter(
+        Attendance.scan_date == view_date
+    )
+    
+    # Filter by staff's assigned sites
+    if current_user.role == 'staff':
+        assigned_sites = current_user.get_assigned_sites()
+        if assigned_sites:
+            query = query.filter(Kid.site.in_(assigned_sites))
+        else:
+            # Staff with no sites sees nothing
+            query = query.filter(Kid.id == -1)
+    
+    records = query.order_by(Attendance.scan_time.desc()).all()
+    
+    return render_template('attendance_today.html', records=records, date=view_date, selected_date=selected_date)
