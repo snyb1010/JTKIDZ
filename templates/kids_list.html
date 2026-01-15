@@ -83,12 +83,10 @@
                         <td class="px-4 py-3 text-sm font-mono">{{ kid.barcode }}</td>
                         <td class="px-4 py-3 text-sm font-medium">{{ kid.full_name }}</td>
                         <td class="px-4 py-3 text-sm">
-                            {% if kid.gender == 'Male' %}
-                            <span class="text-blue-600">👦 {{ kid.gender }}</span>
-                            {% elif kid.gender == 'Female' %}
-                            <span class="text-pink-600">👧 {{ kid.gender }}</span>
+                            {% if kid.gender %}
+                            <span>{{ kid.gender }}</span>
                             {% else %}
-                            <span class="text-gray-500">-</span>
+                            <span class="text-gray-400">-</span>
                             {% endif %}
                         </td>
                         <td class="px-4 py-3 text-sm">{{ kid.age }}</td>

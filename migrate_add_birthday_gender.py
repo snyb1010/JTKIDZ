@@ -40,8 +40,6 @@ def migrate():
     if 'gender' not in columns:
         print("Adding gender column...")
         cursor.execute("ALTER TABLE kids ADD COLUMN gender VARCHAR(10)")
-        # Set default gender as 'Male' for existing records
-        cursor.execute("UPDATE kids SET gender = 'Male' WHERE gender IS NULL")
     else:
         print("gender column already exists, skipping...")
     
