@@ -50,11 +50,12 @@ def dashboard():
     sites = db.session.query(Kid.site).distinct().all()
     active_sites = len(sites)
     
-    # Age group counts
-    kids_count = Kid.query.filter_by(status='active').filter(Kid.age >= 3, Kid.age <= 8).count()
-    risers_count = Kid.query.filter_by(status='active').filter(Kid.age >= 9, Kid.age <= 11).count()
-    teens_count = Kid.query.filter_by(status='active').filter(Kid.age >= 12, Kid.age <= 14).count()
-    other_count = Kid.query.filter_by(status='active').filter((Kid.age < 3) | (Kid.age > 14)).count()
+    # Age group counts (calculate in Python since age is a property)
+    active_kids = Kid.query.filter_by(status='active').all()
+    kids_count = sum(1 for k in active_kids if 3 <= k.age <= 8)
+    risers_count = sum(1 for k in active_kids if 9 <= k.age <= 11)
+    teens_count = sum(1 for k in active_kids if 12 <= k.age <= 14)
+    other_count = sum(1 for k in active_kids if k.age < 3 or k.age > 14)
     
     # Recent attendance
     recent_attendance = db.session.query(Attendance, Kid).join(Kid).filter(

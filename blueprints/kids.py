@@ -43,17 +43,18 @@ def list_kids():
     if status_filter:
         query = query.filter_by(status=status_filter)
     
-    # Filter by age group
-    if age_group_filter == 'kids':
-        query = query.filter(Kid.age >= 3, Kid.age <= 8)
-    elif age_group_filter == 'risers':
-        query = query.filter(Kid.age >= 9, Kid.age <= 11)
-    elif age_group_filter == 'teens':
-        query = query.filter(Kid.age >= 12, Kid.age <= 14)
-    elif age_group_filter == 'other':
-        query = query.filter((Kid.age < 3) | (Kid.age > 14))
-    
+    # Get all kids first (can't filter by age property in SQL)
     kids = query.order_by(Kid.full_name).all()
+    
+    # Filter by age group in Python
+    if age_group_filter == 'kids':
+        kids = [k for k in kids if 3 <= k.age <= 8]
+    elif age_group_filter == 'risers':
+        kids = [k for k in kids if 9 <= k.age <= 11]
+    elif age_group_filter == 'teens':
+        kids = [k for k in kids if 12 <= k.age <= 14]
+    elif age_group_filter == 'other':
+        kids = [k for k in kids if k.age < 3 or k.age > 14]
     
     # Get sites based on user role
     if current_user.role == 'admin':
