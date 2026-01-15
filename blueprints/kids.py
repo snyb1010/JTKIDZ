@@ -89,6 +89,11 @@ def add_kid():
         gender = request.form.get('gender')
         site = request.form.get('site')
         
+        # Validate required fields
+        if not full_name or not birthday_str or not gender or not site:
+            flash('Please fill in all required fields', 'danger')
+            return render_template('kid_form.html', kid=None)
+        
         # Parse birthday
         birthday = None
         if birthday_str:
