@@ -3,8 +3,18 @@ from models import Kid, User
 from database import db
 from blueprints.auth import login_required, admin_required
 from services.barcode_service import generate_barcode
+from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
 
 kids_bp = Blueprint('kids', __name__, url_prefix='/kids')
+
+# Configuration for file uploads
+UPLOAD_FOLDER = 'static/img/profiles'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @kids_bp.route('/')
 @login_required
@@ -65,8 +75,36 @@ def add_kid():
     """Add new kid"""
     if request.method == 'POST':
         full_name = request.form.get('full_name')
-        age = request.form.get('age')
+        birthday_str = request.form.get('birthday')
+        gender = request.form.get('gender')
         site = request.form.get('site')
+        
+        # Parse birthday
+        birthday = None
+        if birthday_str:
+            try:
+                birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date()
+            except:
+                flash('Invalid birthday format', 'danger')
+                return render_template('kid_form.html', kid=None)
+        
+        # Handle profile picture upload
+        profile_pic = None
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Create unique filename
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                name_part = secure_filename(full_name.replace(' ', '_'))
+                ext = filename.rsplit('.', 1)[1].lower()
+                unique_filename = f"{name_part}_{timestamp}.{ext}"
+                
+                # Ensure upload folder exists
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                
+                file.save(os.path.join(UPLOAD_FOLDER, unique_filename))
+                profile_pic = unique_filename
         
         # Generate unique barcode
         last_kid = Kid.query.order_by(Kid.id.desc()).first()
@@ -80,7 +118,9 @@ def add_kid():
         
         kid = Kid(
             full_name=full_name,
-            age=int(age),
+            birthday=birthday,
+            gender=gender,
+            profile_pic=profile_pic,
             site=site,
             barcode=barcode,
             status='active'
@@ -105,9 +145,39 @@ def edit_kid(kid_id):
     
     if request.method == 'POST':
         kid.full_name = request.form.get('full_name')
-        kid.age = int(request.form.get('age'))
+        
+        # Update birthday
+        birthday_str = request.form.get('birthday')
+        if birthday_str:
+            try:
+                kid.birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date()
+            except:
+                flash('Invalid birthday format', 'danger')
+                return render_template('kid_form.html', kid=kid)
+        
+        kid.gender = request.form.get('gender')
         kid.site = request.form.get('site')
         kid.status = request.form.get('status')
+        
+        # Handle profile picture upload
+        if 'profile_pic' in request.files:
+            file = request.files['profile_pic']
+            if file and file.filename and allowed_file(file.filename):
+                # Delete old picture if exists
+                if kid.profile_pic:
+                    old_pic_path = os.path.join(UPLOAD_FOLDER, kid.profile_pic)
+                    if os.path.exists(old_pic_path):
+                        os.remove(old_pic_path)
+                
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                name_part = secure_filename(kid.full_name.replace(' ', '_'))
+                ext = filename.rsplit('.', 1)[1].lower()
+                unique_filename = f"{name_part}_{timestamp}.{ext}"
+                
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+                file.save(os.path.join(UPLOAD_FOLDER, unique_filename))
+                kid.profile_pic = unique_filename
         
         db.session.commit()
         flash(f'Kid {kid.full_name} updated successfully!', 'success')

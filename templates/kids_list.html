@@ -54,8 +54,10 @@
         <table class="w-full">
             <thead class="bg-gray-50">
                 <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Photo</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Barcode</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Gender</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age Group</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Site</th>
@@ -67,8 +69,28 @@
                 {% if kids %}
                     {% for kid in kids %}
                     <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            {% if kid.profile_pic %}
+                            <img src="{{ url_for('static', filename='img/profiles/' + kid.profile_pic) }}" 
+                                 alt="{{ kid.full_name }}" 
+                                 class="w-12 h-12 object-cover rounded-full border-2 border-gray-300">
+                            {% else %}
+                            <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border-2 border-gray-300">
+                                <span class="text-gray-500 font-semibold text-lg">{{ kid.full_name[0] }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
                         <td class="px-4 py-3 text-sm font-mono">{{ kid.barcode }}</td>
                         <td class="px-4 py-3 text-sm font-medium">{{ kid.full_name }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if kid.gender == 'Male' %}
+                            <span class="text-blue-600">👦 {{ kid.gender }}</span>
+                            {% elif kid.gender == 'Female' %}
+                            <span class="text-pink-600">👧 {{ kid.gender }}</span>
+                            {% else %}
+                            <span class="text-gray-500">-</span>
+                            {% endif %}
+                        </td>
                         <td class="px-4 py-3 text-sm">{{ kid.age }}</td>
                         <td class="px-4 py-3 text-sm">
                             <span class="{% if kid.age_group == 'Kids (3-8)' %}bg-blue-100 text-blue-800{% elif kid.age_group == 'Risers (9-11)' %}bg-green-100 text-green-800{% elif kid.age_group == 'Teens (12-14)' %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-800{% endif %} text-xs font-semibold px-2 py-1 rounded">

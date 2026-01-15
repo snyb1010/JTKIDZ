@@ -58,7 +58,9 @@ class Kid(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
-    age = db.Column(db.Integer, nullable=False)
+    birthday = db.Column(db.Date, nullable=True)  # New: Birthday field
+    gender = db.Column(db.String(10), nullable=True)  # New: 'Male' or 'Female'
+    profile_pic = db.Column(db.String(255), nullable=True)  # New: Profile picture filename
     site = db.Column(db.String(100), nullable=False)
     barcode = db.Column(db.String(50), unique=True, nullable=False)
     status = db.Column(db.String(20), nullable=False, default='active')  # 'active' or 'inactive'
@@ -68,13 +70,27 @@ class Kid(db.Model):
     attendance_records = db.relationship('Attendance', backref='kid', lazy=True)
     
     @property
+    def age(self):
+        """Calculate age from birthday (automatically updates on birthday)"""
+        if not self.birthday:
+            return 0
+        from datetime import date
+        today = date.today()
+        age = today.year - self.birthday.year
+        # Subtract 1 if birthday hasn't occurred yet this year
+        if (today.month, today.day) < (self.birthday.month, self.birthday.day):
+            age -= 1
+        return age
+    
+    @property
     def age_group(self):
         """Return age group category"""
-        if 3 <= self.age <= 8:
+        current_age = self.age
+        if 3 <= current_age <= 8:
             return 'Kids (3-8)'
-        elif 9 <= self.age <= 11:
+        elif 9 <= current_age <= 11:
             return 'Risers (9-11)'
-        elif 12 <= self.age <= 14:
+        elif 12 <= current_age <= 14:
             return 'Teens (12-14)'
         else:
             return 'Other'
