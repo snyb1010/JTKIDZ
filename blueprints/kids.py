@@ -23,6 +23,7 @@ def list_kids():
     site_filter = request.args.get('site', '')
     status_filter = request.args.get('status', 'active')
     age_group_filter = request.args.get('age_group', '')
+    sort_by = request.args.get('sort', 'name')  # New: sort parameter
     
     # Get current user and their site access
     current_user = User.query.get(session['user_id'])
@@ -44,7 +45,7 @@ def list_kids():
         query = query.filter_by(status=status_filter)
     
     # Get all kids first (can't filter by age property in SQL)
-    kids = query.order_by(Kid.full_name).all()
+    kids = query.all()
     
     # Filter by age group in Python
     if age_group_filter == 'kids':
@@ -55,6 +56,14 @@ def list_kids():
         kids = [k for k in kids if 12 <= k.age <= 14]
     elif age_group_filter == 'other':
         kids = [k for k in kids if k.age < 3 or k.age > 14]
+    
+    # Sort kids based on parameter
+    if sort_by == 'barcode':
+        kids = sorted(kids, key=lambda k: k.barcode)
+    elif sort_by == 'gender':
+        kids = sorted(kids, key=lambda k: (k.gender or 'ZZZ', k.full_name))  # Gender then name
+    else:  # default: sort by name
+        kids = sorted(kids, key=lambda k: k.full_name)
     
     # Get sites based on user role
     if current_user.role == 'admin':
@@ -68,7 +77,7 @@ def list_kids():
     
     return render_template('kids_list.html', kids=kids, sites=sites, 
                           current_site=site_filter, current_status=status_filter,
-                          current_age_group=age_group_filter)
+                          current_age_group=age_group_filter, current_sort=sort_by)
 
 @kids_bp.route('/add', methods=['GET', 'POST'])
 @admin_required
