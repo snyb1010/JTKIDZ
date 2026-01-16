@@ -10,6 +10,14 @@
         @media print {
             .no-print { display: none !important; }
         }
+        .mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .mobile-menu.active {
+            max-height: 500px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -17,25 +25,58 @@
     <nav class="bg-blue-600 text-white shadow-lg no-print">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between py-4">
-                <div class="flex items-center space-x-4">
+                <!-- Logo and Brand -->
+                <div class="flex items-center space-x-2">
                     <a href="{{ url_for('dashboard') }}" class="flex items-center space-x-2">
                         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-10 w-10 rounded-full bg-white p-1" onerror="this.style.display='none'">
-                        <span class="text-2xl font-bold">JT KIDZ</span>
+                        <span class="text-xl md:text-2xl font-bold">JT KIDZ</span>
                     </a>
-                    {% if current_user_role == 'admin' %}
-                    <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200">Kids</a>
-                    <a href="{{ url_for('users.list_users') }}" class="hover:text-blue-200">Workers</a>
-                    <a href="{{ url_for('lessons.manage_lessons') }}" class="hover:text-blue-200">Lessons</a>
-                    <a href="{{ url_for('reports.lesson_report') }}" class="hover:text-blue-200">Reports</a>
-                    {% else %}
-                    <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200">Kids</a>
-                    {% endif %}
-                    <a href="{{ url_for('attendance.scan_page') }}" class="hover:text-blue-200">Scan</a>
-                    <a href="{{ url_for('attendance.today_attendance') }}" class="hover:text-blue-200">Today</a>
                 </div>
-                <div class="flex items-center space-x-4">
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-4">
+                    {% if current_user_role == 'admin' %}
+                    <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200 px-2 py-1">Kids</a>
+                    <a href="{{ url_for('users.list_users') }}" class="hover:text-blue-200 px-2 py-1">Workers</a>
+                    <a href="{{ url_for('lessons.manage_lessons') }}" class="hover:text-blue-200 px-2 py-1">Lessons</a>
+                    <a href="{{ url_for('reports.lesson_report') }}" class="hover:text-blue-200 px-2 py-1">Reports</a>
+                    {% else %}
+                    <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200 px-2 py-1">Kids</a>
+                    {% endif %}
+                    <a href="{{ url_for('attendance.scan_page') }}" class="hover:text-blue-200 px-2 py-1">Scan</a>
+                    <a href="{{ url_for('attendance.today_attendance') }}" class="hover:text-blue-200 px-2 py-1">Today</a>
+                </div>
+                
+                <!-- Desktop User Info -->
+                <div class="hidden md:flex items-center space-x-4">
                     <span class="text-sm">{{ current_user_name }} ({{ current_user_role }})</span>
                     <a href="{{ url_for('auth.logout') }}" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm">Logout</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Mobile Navigation Menu -->
+            <div id="mobile-menu" class="mobile-menu md:hidden">
+                <div class="py-2 space-y-1 border-t border-blue-500">
+                    {% if current_user_role == 'admin' %}
+                    <a href="{{ url_for('kids.list_kids') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Kids</a>
+                    <a href="{{ url_for('users.list_users') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Workers</a>
+                    <a href="{{ url_for('lessons.manage_lessons') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Lessons</a>
+                    <a href="{{ url_for('reports.lesson_report') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Reports</a>
+                    {% else %}
+                    <a href="{{ url_for('kids.list_kids') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Kids</a>
+                    {% endif %}
+                    <a href="{{ url_for('attendance.scan_page') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Scan</a>
+                    <a href="{{ url_for('attendance.today_attendance') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Today</a>
+                    <div class="border-t border-blue-500 my-2"></div>
+                    <div class="px-4 py-2 text-sm">{{ current_user_name }} ({{ current_user_role }})</div>
+                    <a href="{{ url_for('auth.logout') }}" class="block bg-red-500 hover:bg-red-600 mx-4 my-2 px-4 py-2 rounded text-center">Logout</a>
                 </div>
             </div>
         </div>
@@ -47,7 +88,7 @@
             {% if messages %}
                 <div class="mb-4 no-print">
                     {% for category, message in messages %}
-                        <div class="p-4 rounded mb-2 {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                        <div class="p-4 rounded mb-2 text-sm md:text-base {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
                             {{ message }}
                         </div>
                     {% endfor %}
@@ -59,8 +100,24 @@
     </div>
 
     <footer class="bg-gray-800 text-white text-center py-4 mt-8 no-print">
-        <p>&copy; 2026 JT KIDZ Ministry - Sharing Jesus with Children</p>
+        <p class="text-sm md:text-base">&copy; 2026 JT KIDZ Ministry - Sharing Jesus with Children</p>
     </footer>
+
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('active');
+        }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const button = event.target.closest('button');
+            if (menu && !menu.contains(event.target) && !button) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

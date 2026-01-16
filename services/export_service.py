@@ -45,10 +45,7 @@ def get_age_group(age):
 def export_site_report(site, start_date, end_date):
     """Export site/date filtered attendance report"""
     query = db.session.query(
-        Kid.full_name,
-        Kid.age,
-        Kid.site,
-        Kid.barcode,
+        Kid,
         Attendance.scan_date,
         Attendance.scan_time,
         User.name.label('scanned_by')
@@ -65,16 +62,16 @@ def export_site_report(site, start_date, end_date):
     
     # Convert to DataFrame with age groups
     data = []
-    for r in results:
+    for kid, scan_date, scan_time, scanned_by in results:
         data.append({
-            'Name': r.full_name,
-            'Age': r.age,
-            'Age Group': get_age_group(r.age),
-            'Site': r.site,
-            'Barcode': r.barcode,
-            'Date': r.scan_date.strftime('%Y-%m-%d'),
-            'Time': r.scan_time.strftime('%I:%M %p'),
-            'Scanned By': r.scanned_by
+            'Name': kid.full_name,
+            'Age': kid.age,
+            'Age Group': get_age_group(kid.age),
+            'Site': kid.site,
+            'Barcode': kid.barcode,
+            'Date': scan_date.strftime('%Y-%m-%d'),
+            'Time': scan_time.strftime('%I:%M %p'),
+            'Scanned By': scanned_by
         })
     
     df = pd.DataFrame(data)
@@ -101,10 +98,7 @@ def export_site_report(site, start_date, end_date):
 def export_monthly_report(site, month, year):
     """Export monthly attendance summary per child with age groups"""
     query = db.session.query(
-        Kid.full_name,
-        Kid.age,
-        Kid.site,
-        Kid.barcode,
+        Kid,
         db.func.count(Attendance.id).label('attendance_count')
     ).outerjoin(Attendance,
         (Kid.id == Attendance.kid_id) &
@@ -122,14 +116,14 @@ def export_monthly_report(site, month, year):
     data = []
     month_name = datetime(int(year), int(month), 1).strftime('%B %Y')
     
-    for r in results:
+    for kid, attendance_count in results:
         data.append({
-            'Name': r.full_name,
-            'Age': r.age,
-            'Age Group': get_age_group(r.age),
-            'Site': r.site,
-            'Barcode': r.barcode,
-            f'Attendance Count ({month_name})': r.attendance_count
+            'Name': kid.full_name,
+            'Age': kid.age,
+            'Age Group': get_age_group(kid.age),
+            'Site': kid.site,
+            'Barcode': kid.barcode,
+            f'Attendance Count ({month_name})': attendance_count
         })
     
     df = pd.DataFrame(data)
@@ -165,10 +159,7 @@ def export_monthly_report(site, month, year):
 def export_lesson_report(site, lesson):
     """Export lesson-based attendance report"""
     query = db.session.query(
-        Kid.full_name,
-        Kid.age,
-        Kid.site,
-        Kid.barcode,
+        Kid,
         Attendance.lesson,
         Attendance.scan_date,
         Attendance.scan_time,
@@ -184,17 +175,17 @@ def export_lesson_report(site, lesson):
     
     # Convert to DataFrame
     data = []
-    for r in results:
+    for kid, lesson_num, scan_date, scan_time, scanned_by in results:
         data.append({
-            'Lesson': f'Lesson {r.lesson}',
-            'Name': r.full_name,
-            'Age': r.age,
-            'Age Group': get_age_group(r.age),
-            'Site': r.site,
-            'Barcode': r.barcode,
-            'Date': r.scan_date.strftime('%Y-%m-%d'),
-            'Time': r.scan_time.strftime('%I:%M %p'),
-            'Scanned By': r.scanned_by
+            'Lesson': f'Lesson {lesson_num}',
+            'Name': kid.full_name,
+            'Age': kid.age,
+            'Age Group': get_age_group(kid.age),
+            'Site': kid.site,
+            'Barcode': kid.barcode,
+            'Date': scan_date.strftime('%Y-%m-%d'),
+            'Time': scan_time.strftime('%I:%M %p'),
+            'Scanned By': scanned_by
         })
     
     df = pd.DataFrame(data)

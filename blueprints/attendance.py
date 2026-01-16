@@ -3,6 +3,7 @@ from models import Kid, Attendance, User, SiteLessonSettings
 from database import db
 from blueprints.auth import login_required
 from datetime import datetime, date
+import time
 
 attendance_bp = Blueprint('attendance', __name__, url_prefix='/attendance')
 
@@ -80,6 +81,18 @@ def record_attendance():
     if not barcode:
         return jsonify({'success': False, 'message': 'No barcode provided'}), 400
     
+    # Anti-fraud: Prevent rapid scanning (5 seconds minimum between scans)
+    current_time = time.time()
+    last_scan_time = session.get('last_scan_time', 0)
+    time_diff = current_time - last_scan_time
+    
+    if time_diff < 5:  # Less than 5 seconds since last scan
+        return jsonify({
+            'success': False,
+            'message': f'⚠️ Please wait {int(5 - time_diff)} more seconds before next scan.',
+            'too_fast': True
+        }), 429
+    
     # Validate lesson number
     if not selected_lesson or selected_lesson < 1 or selected_lesson > 6:
         return jsonify({'success': False, 'message': 'Invalid lesson number'}), 400
@@ -131,6 +144,9 @@ def record_attendance():
     db.session.add(attendance)
     db.session.commit()
     
+    # Update last scan time to prevent rapid scanning
+    session['last_scan_time'] = time.time()
+    
     return jsonify({
         'success': True,
         'message': f'✅ {kid.full_name} - Lesson {selected_lesson} recorded!',
@@ -155,12 +171,19 @@ def today_attendance():
     else:
         view_date = get_current_date()
     
+    # Get lesson filter
+    selected_lesson = request.args.get('lesson', '')
+    
     # Get current user and filter by assigned sites for workers
     current_user = User.query.get(session['user_id'])
     
     query = db.session.query(Attendance, Kid, User).join(Kid).join(User, Attendance.scanned_by == User.id).filter(
         Attendance.scan_date == view_date
     )
+    
+    # Filter by lesson if selected
+    if selected_lesson:
+        query = query.filter(Attendance.lesson == int(selected_lesson))
     
     # Filter by staff's assigned sites
     if current_user.role == 'staff':
@@ -173,4 +196,4 @@ def today_attendance():
     
     records = query.order_by(Attendance.scan_time.desc()).all()
     
-    return render_template('attendance_today.html', records=records, date=view_date, selected_date=selected_date)
+    return render_template('attendance_today.html', records=records, date=view_date, selected_date=selected_date, selected_lesson=selected_lesson)

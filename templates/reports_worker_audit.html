@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Worker Audit Report - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>🔍 Worker Audit Report</h2>
+            <p class="text-muted">Monitor worker scanning patterns and detect suspicious activity</p>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ start_date }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary d-block">Filter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worker Stats -->
+    <div class="row">
+        {% for stat in worker_stats %}
+        <div class="col-md-12 mb-4">
+            <div class="card {% if stat.rapid_scans > 5 %}border-danger{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">{{ stat.worker.name }}</h5>
+                        <small class="text-muted">{{ stat.worker.email }}</small>
+                    </div>
+                    {% if stat.rapid_scans > 5 %}
+                    <span class="badge bg-danger">⚠️ Suspicious Activity</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="mb-0">{{ stat.total_scans }}</h4>
+                                <small class="text-muted">Total Scans</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="mb-0 {% if stat.rapid_scans > 5 %}text-danger{% endif %}">{{ stat.rapid_scans }}</h4>
+                                <small class="text-muted">Rapid Scans (&lt;5s)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="mb-0">{{ stat.days_active }}</h4>
+                                <small class="text-muted">Days Active</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="mb-0">{{ stat.avg_per_day }}</h4>
+                                <small class="text-muted">Avg per Day</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if stat.recent_scans %}
+                    <hr>
+                    <h6 class="mb-3">Recent Scans</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Kid</th>
+                                    <th>Site</th>
+                                    <th>Lesson</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for att, kid in stat.recent_scans %}
+                                <tr>
+                                    <td>{{ kid.full_name }}</td>
+                                    <td>{{ att.site }}</td>
+                                    <td>Lesson {{ att.lesson }}</td>
+                                    <td>{{ att.scan_date.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ att.scan_time.strftime('%I:%M %p') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not worker_stats %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No worker activity found in the selected date range.
+    </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{{ url_for('reports.attendance_summary') }}" class="btn btn-secondary">← Back to Reports</a>
+    </div>
+</div>
+{% endblock %}

@@ -14,6 +14,31 @@ def manage_lessons():
     from calendar import monthcalendar, month_name
     from datetime import datetime
     
+    # Get selected quarter from query params (default to current quarter)
+    selected_quarter = request.args.get('quarter', '')
+    current_month = datetime.now().month
+    
+    if not selected_quarter:
+        # Determine current quarter
+        if current_month <= 3:
+            selected_quarter = '1'
+        elif current_month <= 6:
+            selected_quarter = '2'
+        elif current_month <= 9:
+            selected_quarter = '3'
+        else:
+            selected_quarter = '4'
+    
+    # Define quarter month ranges
+    quarters = {
+        '1': (1, 2, 3),      # Q1: Jan, Feb, Mar
+        '2': (4, 5, 6),      # Q2: Apr, May, Jun
+        '3': (7, 8, 9),      # Q3: Jul, Aug, Sep
+        '4': (10, 11, 12)    # Q4: Oct, Nov, Dec
+    }
+    
+    quarter_months = quarters.get(selected_quarter, (1, 2, 3))
+    
     # Get all sites
     sites = db.session.query(Kid.site).distinct().order_by(Kid.site).all()
     sites = [s[0] for s in sites]
@@ -42,11 +67,16 @@ def manage_lessons():
             elif lesson_num == setting.current_lesson and setting.lesson_start_date:
                 lesson_dates[lesson_num] = setting.lesson_start_date
         
-        # Build calendar for current year (2026)
+        # Build calendar for current year (2026) - only selected quarter
         year = 2026
         months_data = []
-        for month_num in range(1, 13):
-            month_calendar = monthcalendar(year, month_num)
+        
+        # Use Calendar with Sunday as first day of week
+        from calendar import Calendar
+        cal = Calendar(firstweekday=6)  # 6 = Sunday
+        
+        for month_num in quarter_months:
+            month_calendar = cal.monthdayscalendar(year, month_num)
             month_info = {
                 'name': month_name[month_num],
                 'number': month_num,
@@ -68,7 +98,7 @@ def manage_lessons():
             'lesson_dates': lesson_dates
         })
     
-    return render_template('lessons_manage.html', lesson_data=lesson_data)
+    return render_template('lessons_manage.html', lesson_data=lesson_data, selected_quarter=selected_quarter)
 
 @lessons_bp.route('/advance/<site>', methods=['POST'])
 @admin_required

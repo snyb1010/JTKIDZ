@@ -10,6 +10,7 @@ from blueprints.users import users_bp
 from blueprints.lessons import lessons_bp
 from datetime import datetime
 import os
+import json
 
 def get_current_date():
     """Get current date in Philippines timezone"""
@@ -43,26 +44,55 @@ def index():
 @login_required
 def dashboard():
     """Main dashboard"""
+    # Get current user
+    user = User.query.get(session['user_id'])
+    
     # Get statistics (using Philippines time)
-    total_kids = Kid.query.filter_by(status='active').count()
     today = get_current_date()
-    attendance_today = Attendance.query.filter_by(scan_date=today).count()
     
-    # Get unique sites
-    sites = db.session.query(Kid.site).distinct().all()
-    active_sites = len(sites)
+    # Filter by assigned sites for staff
+    if user.role == 'staff' and user.assigned_sites:
+        try:
+            staff_sites = json.loads(user.assigned_sites)
+        except:
+            staff_sites = [s.strip() for s in user.assigned_sites.split(',')]
+        
+        total_kids = Kid.query.filter_by(status='active').filter(Kid.site.in_(staff_sites)).count()
+        attendance_today = Attendance.query.filter_by(scan_date=today).filter(Attendance.site.in_(staff_sites)).count()
+        
+        # Get unique sites (only staff's assigned sites)
+        sites = db.session.query(Kid.site).filter(Kid.site.in_(staff_sites)).distinct().all()
+        active_sites = len(sites)
+        
+        # Age group counts (calculate in Python since age is a property)
+        active_kids = Kid.query.filter_by(status='active').filter(Kid.site.in_(staff_sites)).all()
+        
+        # Recent attendance (only from staff's sites)
+        recent_attendance = db.session.query(Attendance, Kid).join(Kid).filter(
+            Attendance.scan_date == today,
+            Attendance.site.in_(staff_sites)
+        ).order_by(Attendance.scan_time.desc()).limit(10).all()
+    else:
+        # Admin sees all
+        total_kids = Kid.query.filter_by(status='active').count()
+        attendance_today = Attendance.query.filter_by(scan_date=today).count()
+        
+        # Get unique sites
+        sites = db.session.query(Kid.site).distinct().all()
+        active_sites = len(sites)
+        
+        # Age group counts (calculate in Python since age is a property)
+        active_kids = Kid.query.filter_by(status='active').all()
+        
+        # Recent attendance
+        recent_attendance = db.session.query(Attendance, Kid).join(Kid).filter(
+            Attendance.scan_date == today
+        ).order_by(Attendance.scan_time.desc()).limit(10).all()
     
-    # Age group counts (calculate in Python since age is a property)
-    active_kids = Kid.query.filter_by(status='active').all()
     kids_count = sum(1 for k in active_kids if 3 <= k.age <= 8)
     risers_count = sum(1 for k in active_kids if 9 <= k.age <= 11)
     teens_count = sum(1 for k in active_kids if 12 <= k.age <= 14)
     other_count = sum(1 for k in active_kids if k.age < 3 or k.age > 14)
-    
-    # Recent attendance
-    recent_attendance = db.session.query(Attendance, Kid).join(Kid).filter(
-        Attendance.scan_date == today
-    ).order_by(Attendance.scan_time.desc()).limit(10).all()
     
     stats = {
         'total_kids': total_kids,

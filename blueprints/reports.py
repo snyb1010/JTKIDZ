@@ -3,7 +3,7 @@ from models import Kid, Attendance, User, SiteLessonSettings
 from database import db
 from blueprints.auth import login_required, admin_required
 from services.export_service import export_to_excel
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy import func, extract
 from collections import defaultdict
 
@@ -288,6 +288,67 @@ def lesson_detail():
     return render_template('reports_lesson_detail.html',
                           attendance_records=attendance_records,
                           stats=stats)
+
+@reports_bp.route('/worker-audit')
+@admin_required
+def worker_audit():
+    """Admin audit report showing worker scanning patterns"""
+    from blueprints.attendance import get_current_date
+    
+    # Get date range from query params
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+    
+    if not start_date or not end_date:
+        # Default to last 7 days
+        today = get_current_date()
+        end_date = today.strftime('%Y-%m-%d')
+        start_date = (today - timedelta(days=7)).strftime('%Y-%m-%d')
+    
+    # Get all staff users
+    workers = User.query.filter_by(role='staff').all()
+    
+    # Build report data per worker
+    worker_stats = []
+    for worker in workers:
+        # Get attendance scanned by this worker in date range
+        scans = db.session.query(Attendance, Kid).join(Kid).filter(
+            Attendance.scanned_by == worker.id,
+            Attendance.scan_date >= start_date,
+            Attendance.scan_date <= end_date
+        ).order_by(Attendance.scan_date.desc(), Attendance.scan_time.desc()).all()
+        
+        # Detect suspicious patterns
+        scan_times = []
+        rapid_scans = 0
+        for i, (att, kid) in enumerate(scans):
+            scan_datetime = datetime.combine(att.scan_date, att.scan_time)
+            scan_times.append(scan_datetime)
+            
+            # Check if scan was within 5 seconds of previous
+            if i > 0:
+                time_diff = (scan_times[i-1] - scan_times[i]).total_seconds()
+                if abs(time_diff) < 5:
+                    rapid_scans += 1
+        
+        # Group by date
+        daily_counts = defaultdict(int)
+        for att, kid in scans:
+            daily_counts[att.scan_date] += 1
+        
+        worker_stats.append({
+            'worker': worker,
+            'total_scans': len(scans),
+            'rapid_scans': rapid_scans,
+            'days_active': len(daily_counts),
+            'avg_per_day': round(len(scans) / max(len(daily_counts), 1), 1),
+            'recent_scans': scans[:10]  # Last 10 scans
+        })
+    
+    return render_template('reports_worker_audit.html',
+                          worker_stats=worker_stats,
+                          start_date=start_date,
+                          end_date=end_date)
 
 @reports_bp.route('/export')
 @admin_required
