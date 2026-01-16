@@ -253,6 +253,42 @@ def lesson_report():
                           current_site=site_filter,
                           current_lesson=lesson_filter)
 
+@reports_bp.route('/lessons/detail')
+@admin_required
+def lesson_detail():
+    """Detailed attendance for a specific site and lesson"""
+    site = request.args.get('site', '')
+    lesson = request.args.get('lesson', type=int)
+    
+    if not site or not lesson:
+        flash('Site and lesson parameters are required', 'danger')
+        return redirect(url_for('reports.lesson_report'))
+    
+    # Get all kids who attended this lesson at this site
+    attendance_records = db.session.query(Attendance, Kid).join(Kid).filter(
+        Attendance.site == site,
+        Attendance.lesson == lesson
+    ).order_by(Attendance.scan_date, Attendance.scan_time).all()
+    
+    # Get total active kids in site
+    total_kids = Kid.query.filter_by(site=site, status='active').count()
+    
+    # Get unique kids count
+    unique_kids = len(set([a.kid_id for a, k in attendance_records]))
+    
+    stats = {
+        'site': site,
+        'lesson': lesson,
+        'total_kids': total_kids,
+        'attended': unique_kids,
+        'completion_rate': round((unique_kids / total_kids * 100) if total_kids > 0 else 0, 1),
+        'total_scans': len(attendance_records)
+    }
+    
+    return render_template('reports_lesson_detail.html',
+                          attendance_records=attendance_records,
+                          stats=stats)
+
 @reports_bp.route('/export')
 @admin_required
 def export_report():

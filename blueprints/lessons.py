@@ -11,12 +11,16 @@ lessons_bp = Blueprint('lessons', __name__, url_prefix='/lessons')
 @admin_required
 def manage_lessons():
     """Manage lesson progress for all sites"""
+    from calendar import monthcalendar, month_name
+    from datetime import datetime
+    
     # Get all sites
     sites = db.session.query(Kid.site).distinct().order_by(Kid.site).all()
     sites = [s[0] for s in sites]
     
-    # Get lesson settings for each site
+    # Get lesson settings and prepare calendar data for each site
     lesson_data = []
+    
     for site in sites:
         setting = SiteLessonSettings.query.filter_by(site=site).first()
         if not setting:
@@ -25,22 +29,43 @@ def manage_lessons():
             db.session.add(setting)
             db.session.commit()
         
-        # Get attendance count for current lesson
-        attendance_count = Attendance.query.filter_by(
-            site=site,
-            lesson=setting.current_lesson
-        ).distinct(Attendance.kid_id).count()
+        # Get all lesson start dates by looking at first attendance for each lesson
+        lesson_dates = {}
+        for lesson_num in range(1, 7):
+            first_attendance = Attendance.query.filter_by(
+                site=site,
+                lesson=lesson_num
+            ).order_by(Attendance.scan_date).first()
+            
+            if first_attendance:
+                lesson_dates[lesson_num] = first_attendance.scan_date
+            elif lesson_num == setting.current_lesson and setting.lesson_start_date:
+                lesson_dates[lesson_num] = setting.lesson_start_date
         
-        # Get total active kids in site
-        total_kids = Kid.query.filter_by(site=site, status='active').count()
+        # Build calendar for current year (2026)
+        year = 2026
+        months_data = []
+        for month_num in range(1, 13):
+            month_calendar = monthcalendar(year, month_num)
+            month_info = {
+                'name': month_name[month_num],
+                'number': month_num,
+                'weeks': month_calendar,
+                'lesson_markers': {}
+            }
+            
+            # Add lesson markers for this month
+            for lesson_num, lesson_date in lesson_dates.items():
+                if lesson_date.year == year and lesson_date.month == month_num:
+                    month_info['lesson_markers'][lesson_date.day] = f'L{lesson_num}'
+            
+            months_data.append(month_info)
         
         lesson_data.append({
             'site': site,
             'current_lesson': setting.current_lesson,
-            'start_date': setting.lesson_start_date,
-            'attendance_count': attendance_count,
-            'total_kids': total_kids,
-            'completion_rate': round((attendance_count / total_kids * 100) if total_kids > 0 else 0, 1)
+            'months': months_data,
+            'lesson_dates': lesson_dates
         })
     
     return render_template('lessons_manage.html', lesson_data=lesson_data)

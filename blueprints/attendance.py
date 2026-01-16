@@ -44,13 +44,30 @@ def scan_page():
             'start_date': setting.lesson_start_date.strftime('%b %d, %Y') if setting.lesson_start_date else 'Not set'
         }
     
-    # Default to current lesson or 1
+    # For staff, determine which lessons they can access based on what they've scanned
+    available_lessons = [1]  # Lesson 1 always available
     default_lesson = 1
-    if lesson_settings and user_sites:
-        first_site = user_sites[0]
-        default_lesson = lesson_settings.get(first_site, {}).get('current_lesson', 1)
     
-    return render_template('scan.html', lesson_settings=lesson_settings, default_lesson=default_lesson)
+    if current_user.role == 'staff':
+        # Check what lessons this staff member has scanned for
+        scanned_lessons = db.session.query(Attendance.lesson).filter(
+            Attendance.scanned_by == current_user.id
+        ).distinct().order_by(Attendance.lesson).all()
+        
+        if scanned_lessons:
+            max_scanned = max([l[0] for l in scanned_lessons])
+            # Can access all lessons up to max_scanned + 1 (up to lesson 6)
+            available_lessons = list(range(1, min(max_scanned + 2, 7)))
+            default_lesson = max_scanned if max_scanned < 6 else 6
+    else:
+        # Admin can access all lessons
+        available_lessons = list(range(1, 7))
+        if lesson_settings and user_sites:
+            first_site = user_sites[0]
+            default_lesson = lesson_settings.get(first_site, {}).get('current_lesson', 1)
+    
+    return render_template('scan.html', lesson_settings=lesson_settings, 
+                          default_lesson=default_lesson, available_lessons=available_lessons)
 
 @attendance_bp.route('/record', methods=['POST'])
 @login_required

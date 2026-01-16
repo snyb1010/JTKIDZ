@@ -13,9 +13,16 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">Select Lesson</label>
             <select id="lesson-selector" class="px-4 py-2 border border-gray-300 rounded-lg text-lg font-bold focus:outline-none focus:ring-2 focus:ring-purple-500">
                 {% for i in range(1, 7) %}
-                <option value="{{ i }}" {% if i == default_lesson %}selected{% endif %}>Lesson {{ i }}</option>
+                <option value="{{ i }}" 
+                        {% if i == default_lesson %}selected{% endif %}
+                        {% if i not in available_lessons %}disabled{% endif %}>
+                    Lesson {{ i }}{% if i not in available_lessons %} 🔒{% endif %}
+                </option>
                 {% endfor %}
             </select>
+            {% if available_lessons|length < 6 %}
+            <p class="text-xs text-gray-500 mt-2">Complete Lesson {{ available_lessons[-1] }} to unlock next lesson</p>
+            {% endif %}
         </div>
     </div>
     

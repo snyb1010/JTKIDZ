@@ -72,7 +72,10 @@
         <div class="border border-gray-200 rounded-lg p-4">
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center gap-2">
-                    <h3 class="font-semibold text-gray-800">{{ site_data.site }}</h3>
+                    <a href="{{ url_for('reports.lesson_detail', site=site_data.site, lesson=lesson_info.lesson) }}" 
+                       class="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                        {{ site_data.site }}
+                    </a>
                     {% if site_data.is_current %}
                     <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-semibold">Current</span>
                     {% elif site_data.is_completed %}

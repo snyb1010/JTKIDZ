@@ -5,133 +5,114 @@
 {% block content %}
 <div class="mb-6">
     <h1 class="text-3xl font-bold text-gray-800">📚 Lesson Management</h1>
-    <p class="text-gray-600">Manage lesson progress for all sites</p>
+    <p class="text-gray-600">Track lesson start dates for all sites</p>
 </div>
 
-<!-- Lesson Timeline Calendar -->
+{% for data in lesson_data %}
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <h2 class="text-xl font-bold text-gray-800 mb-4">📅 Lesson Schedule Timeline</h2>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-2 text-left font-semibold">Site</th>
-                    {% for i in range(1, 7) %}
-                    <th class="px-4 py-2 text-center font-semibold">Lesson {{ i }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for data in lesson_data %}
-                <tr class="border-t">
-                    <td class="px-4 py-2 font-medium">{{ data.site }}</td>
-                    {% for i in range(1, 7) %}
-                    <td class="px-4 py-2 text-center">
-                        {% if i < data.current_lesson %}
-                        <div class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                            ✓ Done
-                        </div>
-                        {% elif i == data.current_lesson %}
-                        <div class="inline-block bg-purple-100 text-purple-800 px-3 py-2 rounded">
-                            <div class="font-bold">Current</div>
-                            <div class="text-xs">{{ data.start_date.strftime('%b %d') if data.start_date else '-' }}</div>
-                        </div>
-                        {% else %}
-                        <div class="inline-block bg-gray-100 text-gray-400 px-2 py-1 rounded text-xs">
-                            Upcoming
-                        </div>
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">{{ data.site }}</h2>
+        <span class="bg-purple-100 text-purple-800 px-4 py-2 rounded-full font-bold">
+            Current: Lesson {{ data.current_lesson }}
+        </span>
     </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for data in lesson_data %}
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h3 class="text-xl font-bold text-gray-800">{{ data.site }}</h3>
-                <p class="text-sm text-gray-500">
-                    Started: {{ data.start_date.strftime('%b %d, %Y') if data.start_date else 'Not set' }}
-                </p>
-            </div>
-            <div class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold text-lg">
-                Lesson {{ data.current_lesson }}
-            </div>
+    
+    <!-- Calendars Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% for month in data.months %}
+        <div class="border border-gray-200 rounded-lg p-3">
+            <h3 class="text-center font-bold text-gray-700 mb-2">{{ month.name }}</h3>
+            <table class="w-full text-xs">
+                <thead>
+                    <tr class="text-gray-500">
+                        <th class="text-center py-1">Su</th>
+                        <th class="text-center py-1">Mo</th>
+                        <th class="text-center py-1">Tu</th>
+                        <th class="text-center py-1">We</th>
+                        <th class="text-center py-1">Th</th>
+                        <th class="text-center py-1">Fr</th>
+                        <th class="text-center py-1">Sa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for week in month.weeks %}
+                    <tr>
+                        {% for day in week %}
+                        <td class="text-center py-1 relative">
+                            {% if day == 0 %}
+                            <span class="text-gray-300"></span>
+                            {% else %}
+                            <div class="relative">
+                                <span class="{% if day in month.lesson_markers %}font-bold text-purple-600{% else %}text-gray-700{% endif %}">
+                                    {{ day }}
+                                </span>
+                                {% if day in month.lesson_markers %}
+                                <div class="text-[8px] text-purple-600 font-bold leading-none">
+                                    {{ month.lesson_markers[day] }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        
-        <!-- Progress Bar -->
-        <div class="mb-4">
-            <div class="flex justify-between text-sm text-gray-600 mb-1">
-                <span>Attendance Progress</span>
-                <span>{{ data.attendance_count }}/{{ data.total_kids }} ({{ data.completion_rate }}%)</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-                <div class="bg-green-500 h-3 rounded-full transition-all" 
-                     style="width: {{ data.completion_rate }}%"></div>
-            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Lesson Summary -->
+    <div class="mt-4 flex flex-wrap gap-2">
+        {% for lesson_num in range(1, 7) %}
+        {% if lesson_num in data.lesson_dates %}
+        <span class="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full">
+            Lesson {{ lesson_num }}: {{ data.lesson_dates[lesson_num].strftime('%b %d, %Y') }}
+        </span>
+        {% endif %}
+        {% endfor %}
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="mt-4 flex gap-2">
+        {% if data.current_lesson < 6 %}
+        <form method="POST" action="{{ url_for('lessons.advance_lesson', site=data.site) }}" class="inline">
+            <button type="submit" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+                    onclick="return confirm('Advance {{ data.site }} to Lesson {{ data.current_lesson + 1 }}?')">
+                ➡️ Advance to Lesson {{ data.current_lesson + 1 }}
+            </button>
+        </form>
+        {% else %}
+        <div class="bg-green-100 text-green-800 font-semibold py-2 px-4 rounded-lg text-sm">
+            ✅ All Lessons Complete
         </div>
+        {% endif %}
         
-        <!-- Lesson Status -->
-        <div class="grid grid-cols-6 gap-1 mb-4">
-            {% for i in range(1, 7) %}
-            <div class="text-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
-                            {% if i < data.current_lesson %}bg-green-500 text-white
-                            {% elif i == data.current_lesson %}bg-purple-500 text-white
-                            {% else %}bg-gray-200 text-gray-400{% endif %}">
-                    {{ i }}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        <!-- Actions -->
-        <div class="space-y-2">
-            {% if data.current_lesson < 6 %}
-            <form method="POST" action="{{ url_for('lessons.advance_lesson', site=data.site) }}">
-                <button type="submit" 
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
-                        onclick="return confirm('Advance {{ data.site }} to Lesson {{ data.current_lesson + 1 }}?')">
-                    ➡️ Advance to Lesson {{ data.current_lesson + 1 }}
+        <details class="inline">
+            <summary class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium text-sm py-2 px-4">
+                Set Manually
+            </summary>
+            <form method="POST" action="{{ url_for('lessons.set_lesson', site=data.site) }}" class="mt-2 flex gap-2 items-center">
+                <select name="lesson" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    {% for i in range(1, 7) %}
+                    <option value="{{ i }}" {% if i == data.current_lesson %}selected{% endif %}>
+                        Lesson {{ i }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="start_date" 
+                       value="{{ data.lesson_dates.get(data.current_lesson).strftime('%Y-%m-%d') if data.current_lesson in data.lesson_dates else '' }}"
+                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">
+                    Update
                 </button>
             </form>
-            {% else %}
-            <div class="w-full bg-green-100 text-green-800 font-semibold py-2 px-4 rounded-lg text-center">
-                ✅ All Lessons Complete
-            </div>
-            {% endif %}
-            
-            <!-- Manual Set Form -->
-            <details class="text-sm">
-                <summary class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium">
-                    Set Manually
-                </summary>
-                <form method="POST" action="{{ url_for('lessons.set_lesson', site=data.site) }}" class="mt-2 space-y-2">
-                    <select name="lesson" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                        {% for i in range(1, 7) %}
-                        <option value="{{ i }}" {% if i == data.current_lesson %}selected{% endif %}>
-                            Lesson {{ i }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <input type="date" name="start_date" 
-                           value="{{ data.start_date.strftime('%Y-%m-%d') if data.start_date else '' }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">
-                        Update
-                    </button>
-                </form>
-            </details>
-        </div>
+        </details>
     </div>
-    {% endfor %}
 </div>
+{% endfor %}
 
 {% if not lesson_data %}
 <div class="text-center py-12">

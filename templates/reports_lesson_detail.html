@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Lesson {{ stats.lesson }} - {{ stats.site }} - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ stats.site }} - Lesson {{ stats.lesson }}</h1>
+            <p class="text-gray-600">Detailed attendance records</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ url_for('reports.export_report', type='lesson', site=stats.site, lesson=stats.lesson) }}" 
+               class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg">
+                📥 Download Excel
+            </a>
+            <a href="{{ url_for('reports.lesson_report') }}" 
+               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg">
+                ← Back to Reports
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <p class="text-sm text-gray-600">Total Kids</p>
+        <p class="text-3xl font-bold text-gray-800">{{ stats.total_kids }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <p class="text-sm text-gray-600">Attended</p>
+        <p class="text-3xl font-bold text-green-600">{{ stats.attended }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <p class="text-sm text-gray-600">Completion Rate</p>
+        <p class="text-3xl font-bold text-blue-600">{{ stats.completion_rate }}%</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <p class="text-sm text-gray-600">Total Scans</p>
+        <p class="text-3xl font-bold text-purple-600">{{ stats.total_scans }}</p>
+    </div>
+</div>
+
+<!-- Attendance Records Table -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Age Group</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Gender</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Time</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% if attendance_records %}
+                    {% for attendance, kid in attendance_records %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm font-medium">{{ kid.full_name }}</td>
+                        <td class="px-4 py-3 text-sm font-mono">{{ kid.barcode }}</td>
+                        <td class="px-4 py-3 text-sm">{{ kid.age }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="{% if kid.age_group == 'Kids (3-8)' %}bg-blue-100 text-blue-800{% elif kid.age_group == 'Risers (9-11)' %}bg-green-100 text-green-800{% elif kid.age_group == 'Teens (12-13)' %}bg-purple-100 text-purple-800{% elif kid.age_group == 'Youth (14+)' %}bg-orange-100 text-orange-800{% else %}bg-gray-100 text-gray-800{% endif %} text-xs font-semibold px-2 py-1 rounded">
+                                {{ kid.age_group }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm">{{ kid.gender or '-' }}</td>
+                        <td class="px-4 py-3 text-sm">{{ attendance.scan_date.strftime('%b %d, %Y') }}</td>
+                        <td class="px-4 py-3 text-sm">{{ attendance.scan_time.strftime('%I:%M %p') }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            No attendance records found for this lesson.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-4 text-gray-600">
+    <p>Total: {{ attendance_records|length }} record(s)</p>
+</div>
+{% endblock %}
