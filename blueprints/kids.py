@@ -257,8 +257,6 @@ def bulk_barcodes():
         kids = sorted(kids, key=lambda k: (k.gender or 'ZZZ', k.full_name))
     elif sort_by == 'age':
         kids = sorted(kids, key=lambda k: (k.age, k.full_name))
-    elif sort_by == 'site':
-        kids = sorted(kids, key=lambda k: (k.site, k.full_name))
     else:  # default: name
         kids = sorted(kids, key=lambda k: k.full_name)
     
