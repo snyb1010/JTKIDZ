@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from models import Kid, User
 from database import db
 from blueprints.auth import login_required, admin_required
@@ -6,15 +6,21 @@ from services.barcode_service import generate_barcode
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+import pandas as pd
+import tempfile
 
 kids_bp = Blueprint('kids', __name__, url_prefix='/kids')
 
 # Configuration for file uploads
 UPLOAD_FOLDER = 'static/img/profiles'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXCEL_EXTENSIONS = {'xlsx', 'xls'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_excel_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXCEL_EXTENSIONS
 
 @kids_bp.route('/')
 @login_required
@@ -233,3 +239,120 @@ def bulk_barcodes():
     """View all active barcodes for bulk printing"""
     kids = Kid.query.filter_by(status='active').order_by(Kid.site, Kid.full_name).all()
     return render_template('barcode_print.html', kids=kids, bulk=True)
+
+@kids_bp.route('/bulk-import', methods=['GET', 'POST'])
+@admin_required
+def bulk_import():
+    """Bulk import kids from Excel file"""
+    if request.method == 'POST':
+        if 'excel_file' not in request.files:
+            flash('No file uploaded', 'danger')
+            return redirect(request.url)
+        
+        file = request.files['excel_file']
+        if file.filename == '':
+            flash('No file selected', 'danger')
+            return redirect(request.url)
+        
+        if not allowed_excel_file(file.filename):
+            flash('Invalid file type. Please upload .xlsx or .xls file', 'danger')
+            return redirect(request.url)
+        
+        try:
+            # Read Excel file
+            df = pd.read_excel(file)
+            
+            # Validate required columns
+            required_columns = ['full_name', 'birthday', 'gender', 'site']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                flash(f'Missing required columns: {", ".join(missing_columns)}', 'danger')
+                return redirect(request.url)
+            
+            # Process each row
+            success_count = 0
+            error_rows = []
+            
+            for index, row in df.iterrows():
+                try:
+                    # Validate required fields
+                    if pd.isna(row['full_name']) or pd.isna(row['birthday']) or pd.isna(row['gender']) or pd.isna(row['site']):
+                        error_rows.append(f"Row {index + 2}: Missing required data")
+                        continue
+                    
+                    # Parse birthday
+                    if isinstance(row['birthday'], str):
+                        birthday = datetime.strptime(row['birthday'], '%Y-%m-%d').date()
+                    else:
+                        birthday = row['birthday'].date() if hasattr(row['birthday'], 'date') else row['birthday']
+                    
+                    # Generate unique barcode
+                    last_kid = Kid.query.order_by(Kid.id.desc()).first()
+                    next_id = (last_kid.id + 1) if last_kid else 1
+                    barcode = f'JT{next_id:06d}'
+                    
+                    while Kid.query.filter_by(barcode=barcode).first():
+                        next_id += 1
+                        barcode = f'JT{next_id:06d}'
+                    
+                    # Create kid
+                    kid = Kid(
+                        full_name=str(row['full_name']).strip(),
+                        birthday=birthday,
+                        gender=str(row['gender']).strip(),
+                        site=str(row['site']).strip(),
+                        barcode=barcode,
+                        status='active'
+                    )
+                    
+                    db.session.add(kid)
+                    db.session.flush()  # Get the kid.id
+                    
+                    # Generate barcode image
+                    generate_barcode(kid.barcode, kid.full_name)
+                    
+                    success_count += 1
+                    
+                except Exception as e:
+                    error_rows.append(f"Row {index + 2}: {str(e)}")
+                    continue
+            
+            db.session.commit()
+            
+            # Show results
+            if success_count > 0:
+                flash(f'Successfully imported {success_count} kids!', 'success')
+            if error_rows:
+                flash(f'Errors: {"; ".join(error_rows[:5])}', 'warning')
+            
+            return redirect(url_for('kids.list_kids'))
+            
+        except Exception as e:
+            flash(f'Error processing file: {str(e)}', 'danger')
+            return redirect(request.url)
+    
+    return render_template('kids_bulk_import.html')
+
+@kids_bp.route('/bulk-import/template')
+@admin_required
+def download_template():
+    """Download Excel template for bulk import"""
+    # Create sample Excel file
+    data = {
+        'full_name': ['Juan Dela Cruz', 'Maria Santos'],
+        'birthday': ['2015-01-15', '2016-06-20'],
+        'gender': ['Male', 'Female'],
+        'site': ['Barangay San Pedro', 'Barangay Tagburos']
+    }
+    
+    df = pd.DataFrame(data)
+    
+    # Create temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
+    df.to_excel(temp_file.name, index=False, engine='openpyxl')
+    
+    return send_file(temp_file.name, 
+                    as_attachment=True, 
+                    download_name='jtkidz_import_template.xlsx',
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+

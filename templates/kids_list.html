@@ -6,9 +6,14 @@
 <div class="mb-6">
     <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold text-gray-800">Kids Management</h1>
-        <a href="{{ url_for('kids.add_kid') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
-            ➕ Add New Kid
-        </a>
+        <div class="flex space-x-3">
+            <a href="{{ url_for('kids.bulk_import') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg">
+                📊 Bulk Import
+            </a>
+            <a href="{{ url_for('kids.add_kid') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
+                ➕ Add New Kid
+            </a>
+        </div>
     </div>
 </div>
 
