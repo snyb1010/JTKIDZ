@@ -90,8 +90,10 @@ class Kid(db.Model):
             return 'Kids (3-8)'
         elif 9 <= current_age <= 11:
             return 'Risers (9-11)'
-        elif 12 <= current_age <= 14:
-            return 'Teens (12-14)'
+        elif 12 <= current_age <= 13:
+            return 'Teens (12-13)'
+        elif current_age >= 14:
+            return 'Youth (14+)'
         else:
             return 'Other'
     

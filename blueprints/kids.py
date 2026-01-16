@@ -59,9 +59,11 @@ def list_kids():
     elif age_group_filter == 'risers':
         kids = [k for k in kids if 9 <= k.age <= 11]
     elif age_group_filter == 'teens':
-        kids = [k for k in kids if 12 <= k.age <= 14]
+        kids = [k for k in kids if 12 <= k.age <= 13]
+    elif age_group_filter == 'youth':
+        kids = [k for k in kids if k.age >= 14]
     elif age_group_filter == 'other':
-        kids = [k for k in kids if k.age < 3 or k.age > 14]
+        kids = [k for k in kids if k.age < 3]
     
     # Sort kids based on parameter
     if sort_by == 'barcode':
