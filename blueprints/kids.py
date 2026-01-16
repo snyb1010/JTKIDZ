@@ -236,9 +236,36 @@ def view_barcode(kid_id):
 @kids_bp.route('/barcodes/bulk')
 @admin_required
 def bulk_barcodes():
-    """View all active barcodes for bulk printing"""
-    kids = Kid.query.filter_by(status='active').order_by(Kid.site, Kid.full_name).all()
-    return render_template('barcode_print.html', kids=kids, bulk=True)
+    """View all active barcodes for bulk printing with sorting options"""
+    sort_by = request.args.get('sort', 'site')
+    site_filter = request.args.get('site', '')
+    
+    query = Kid.query.filter_by(status='active')
+    
+    # Filter by site if specified
+    if site_filter:
+        query = query.filter_by(site=site_filter)
+    
+    kids = query.all()
+    
+    # Sort kids based on parameter
+    if sort_by == 'barcode':
+        kids = sorted(kids, key=lambda k: k.barcode)
+    elif sort_by == 'gender':
+        kids = sorted(kids, key=lambda k: (k.gender or 'ZZZ', k.full_name))
+    elif sort_by == 'age':
+        kids = sorted(kids, key=lambda k: (k.age, k.full_name))
+    elif sort_by == 'site':
+        kids = sorted(kids, key=lambda k: (k.site, k.full_name))
+    else:  # default: name
+        kids = sorted(kids, key=lambda k: k.full_name)
+    
+    # Get all sites for filter dropdown
+    sites = db.session.query(Kid.site).distinct().order_by(Kid.site).all()
+    sites = [s[0] for s in sites]
+    
+    return render_template('barcode_print.html', kids=kids, bulk=True, 
+                          current_sort=sort_by, sites=sites, current_site=site_filter)
 
 @kids_bp.route('/bulk-import', methods=['GET', 'POST'])
 @admin_required
