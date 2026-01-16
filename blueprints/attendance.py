@@ -81,15 +81,15 @@ def record_attendance():
     if not barcode:
         return jsonify({'success': False, 'message': 'No barcode provided'}), 400
     
-    # Anti-fraud: Prevent rapid scanning (5 seconds minimum between scans)
+    # Anti-fraud: Prevent rapid scanning (2 seconds minimum between scans)
     current_time = time.time()
     last_scan_time = session.get('last_scan_time', 0)
     time_diff = current_time - last_scan_time
     
-    if time_diff < 5:  # Less than 5 seconds since last scan
+    if time_diff < 2:  # Less than 2 seconds since last scan
         return jsonify({
             'success': False,
-            'message': f'⚠️ Please wait {int(5 - time_diff)} more seconds before next scan.',
+            'message': f'⚠️ Please wait {int(2 - time_diff)} more seconds before next scan.',
             'too_fast': True
         }), 429
     
