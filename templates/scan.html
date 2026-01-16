@@ -7,6 +7,19 @@
     <h1 class="text-3xl font-bold text-gray-800">📱 Scan Barcode</h1>
     <p class="text-gray-600">Scan a kid's wristband to record attendance</p>
     
+    <!-- Lesson Status Cards -->
+    {% if lesson_settings %}
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for site, settings in lesson_settings.items() %}
+        <div class="bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg p-4">
+            <p class="text-sm opacity-90">{{ site }}</p>
+            <p class="text-2xl font-bold">Lesson {{ settings.current_lesson }}</p>
+            <p class="text-xs opacity-75">Started: {{ settings.start_date }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
     <!-- Realtime Clock -->
     <div class="mt-4 text-center">
         <div class="bg-blue-600 text-white rounded-lg p-4 inline-block">

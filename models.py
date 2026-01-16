@@ -108,6 +108,7 @@ class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     kid_id = db.Column(db.Integer, db.ForeignKey('kids.id'), nullable=False)
     site = db.Column(db.String(100), nullable=False)
+    lesson = db.Column(db.Integer, nullable=False, default=1)  # Lesson number (1-6)
     scan_date = db.Column(db.Date, nullable=False)
     scan_time = db.Column(db.Time, nullable=False)
     scanned_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -117,4 +118,18 @@ class Attendance(db.Model):
     scanner = db.relationship('User', backref='scans_made', lazy=True)
     
     def __repr__(self):
-        return f'<Attendance kid_id={self.kid_id} date={self.scan_date}>'
+        return f'<Attendance kid_id={self.kid_id} lesson={self.lesson} date={self.scan_date}>'
+
+
+class SiteLessonSettings(db.Model):
+    """Track current lesson progress per site"""
+    __tablename__ = 'site_lesson_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    site = db.Column(db.String(100), unique=True, nullable=False)
+    current_lesson = db.Column(db.Integer, nullable=False, default=1)  # Current lesson (1-6)
+    lesson_start_date = db.Column(db.Date, nullable=True)  # When this lesson started
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<SiteLessonSettings site={self.site} lesson={self.current_lesson}>'

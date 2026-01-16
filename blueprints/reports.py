@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, send_file, session
-from models import Kid, Attendance, User
+from models import Kid, Attendance, User, SiteLessonSettings
 from database import db
 from blueprints.auth import login_required, admin_required
 from services.export_service import export_to_excel
@@ -175,6 +175,84 @@ def monthly_report():
                           current_month=month,
                           current_year=year)
 
+@reports_bp.route('/lessons')
+@admin_required
+def lesson_report():
+    """Lesson-based attendance report with charts"""
+    lesson_filter = request.args.get('lesson', '', type=str)
+    site_filter = request.args.get('site', '')
+    
+    # Get all sites
+    sites = db.session.query(Kid.site).distinct().order_by(Kid.site).all()
+    sites = [s[0] for s in sites]
+    
+    # Build lesson data for all sites and all lessons
+    lesson_data = []
+    
+    for lesson_num in range(1, 7):
+        lesson_stats = {
+            'lesson': lesson_num,
+            'sites': []
+        }
+        
+        for site in sites:
+            # Skip if filtering and doesn't match
+            if site_filter and site != site_filter:
+                continue
+            if lesson_filter and str(lesson_num) != lesson_filter:
+                continue
+            
+            # Get total active kids in site
+            total_kids = Kid.query.filter_by(site=site, status='active').count()
+            
+            # Get attendance count for this lesson
+            attendance_count = db.session.query(Attendance.kid_id).filter(
+                Attendance.site == site,
+                Attendance.lesson == lesson_num
+            ).distinct().count()
+            
+            # Get lesson setting for this site
+            setting = SiteLessonSettings.query.filter_by(site=site).first()
+            is_current = setting and setting.current_lesson == lesson_num
+            is_completed = setting and setting.current_lesson > lesson_num
+            
+            site_data = {
+                'site': site,
+                'total_kids': total_kids,
+                'attendance_count': attendance_count,
+                'completion_rate': round((attendance_count / total_kids * 100) if total_kids > 0 else 0, 1),
+                'is_current': is_current,
+                'is_completed': is_completed,
+                'status': 'current' if is_current else ('completed' if is_completed else 'upcoming')
+            }
+            
+            lesson_stats['sites'].append(site_data)
+        
+        if lesson_stats['sites']:  # Only add if has data
+            lesson_data.append(lesson_stats)
+    
+    # Calculate overall statistics per lesson
+    overall_by_lesson = []
+    for lesson_num in range(1, 7):
+        total_kids_all = sum(Kid.query.filter_by(site=s, status='active').count() for s in sites)
+        total_attendance = db.session.query(Attendance.kid_id).filter(
+            Attendance.lesson == lesson_num
+        ).distinct().count()
+        
+        overall_by_lesson.append({
+            'lesson': lesson_num,
+            'total_kids': total_kids_all,
+            'attendance': total_attendance,
+            'rate': round((total_attendance / total_kids_all * 100) if total_kids_all > 0 else 0, 1)
+        })
+    
+    return render_template('reports_lesson.html',
+                          lesson_data=lesson_data,
+                          overall_by_lesson=overall_by_lesson,
+                          sites=sites,
+                          current_site=site_filter,
+                          current_lesson=lesson_filter)
+
 @reports_bp.route('/export')
 @admin_required
 def export_report():
@@ -185,7 +263,8 @@ def export_report():
     end_date = request.args.get('end_date', '')
     month = request.args.get('month', '')
     year = request.args.get('year', '')
+    lesson = request.args.get('lesson', '')
     
-    filepath = export_to_excel(report_type, site, start_date, end_date, month, year)
+    filepath = export_to_excel(report_type, site, start_date, end_date, month, year, lesson)
     
     return send_file(filepath, as_attachment=True, download_name=f'jtkidz_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')

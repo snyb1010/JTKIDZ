@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Lesson Management - JT KIDZ{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">📚 Lesson Management</h1>
+    <p class="text-gray-600">Manage lesson progress for all sites</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for data in lesson_data %}
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">{{ data.site }}</h3>
+                <p class="text-sm text-gray-500">
+                    Started: {{ data.start_date.strftime('%b %d, %Y') if data.start_date else 'Not set' }}
+                </p>
+            </div>
+            <div class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-bold text-lg">
+                Lesson {{ data.current_lesson }}
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-600 mb-1">
+                <span>Attendance Progress</span>
+                <span>{{ data.attendance_count }}/{{ data.total_kids }} ({{ data.completion_rate }}%)</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-green-500 h-3 rounded-full transition-all" 
+                     style="width: {{ data.completion_rate }}%"></div>
+            </div>
+        </div>
+        
+        <!-- Lesson Status -->
+        <div class="grid grid-cols-6 gap-1 mb-4">
+            {% for i in range(1, 7) %}
+            <div class="text-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                            {% if i < data.current_lesson %}bg-green-500 text-white
+                            {% elif i == data.current_lesson %}bg-purple-500 text-white
+                            {% else %}bg-gray-200 text-gray-400{% endif %}">
+                    {{ i }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Actions -->
+        <div class="space-y-2">
+            {% if data.current_lesson < 6 %}
+            <form method="POST" action="{{ url_for('lessons.advance_lesson', site=data.site) }}">
+                <button type="submit" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
+                        onclick="return confirm('Advance {{ data.site }} to Lesson {{ data.current_lesson + 1 }}?')">
+                    ➡️ Advance to Lesson {{ data.current_lesson + 1 }}
+                </button>
+            </form>
+            {% else %}
+            <div class="w-full bg-green-100 text-green-800 font-semibold py-2 px-4 rounded-lg text-center">
+                ✅ All Lessons Complete
+            </div>
+            {% endif %}
+            
+            <!-- Manual Set Form -->
+            <details class="text-sm">
+                <summary class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium">
+                    Set Manually
+                </summary>
+                <form method="POST" action="{{ url_for('lessons.set_lesson', site=data.site) }}" class="mt-2 space-y-2">
+                    <select name="lesson" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        {% for i in range(1, 7) %}
+                        <option value="{{ i }}" {% if i == data.current_lesson %}selected{% endif %}>
+                            Lesson {{ i }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <input type="date" name="start_date" 
+                           value="{{ data.start_date.strftime('%Y-%m-%d') if data.start_date else '' }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg text-sm">
+                        Update
+                    </button>
+                </form>
+            </details>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not lesson_data %}
+<div class="text-center py-12">
+    <p class="text-gray-500">No sites found. Add kids to create sites first.</p>
+</div>
+{% endif %}
+{% endblock %}

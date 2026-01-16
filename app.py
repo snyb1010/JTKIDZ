@@ -7,6 +7,7 @@ from blueprints.kids import kids_bp
 from blueprints.attendance import attendance_bp
 from blueprints.reports import reports_bp
 from blueprints.users import users_bp
+from blueprints.lessons import lessons_bp
 from datetime import datetime
 import os
 
@@ -29,6 +30,7 @@ app.register_blueprint(kids_bp)
 app.register_blueprint(attendance_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(lessons_bp)
 
 @app.route('/')
 def index():

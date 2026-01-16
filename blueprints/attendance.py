@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, session, current_app
-from models import Kid, Attendance, User
+from models import Kid, Attendance, User, SiteLessonSettings
 from database import db
 from blueprints.auth import login_required
 from datetime import datetime, date
@@ -19,7 +19,32 @@ def get_current_date():
 @login_required
 def scan_page():
     """Mobile barcode scanning page"""
-    return render_template('scan.html')
+    # Get current user's sites
+    current_user = User.query.get(session['user_id'])
+    
+    if current_user.role == 'admin':
+        # Admin can see all sites
+        sites = db.session.query(Kid.site).distinct().order_by(Kid.site).all()
+        user_sites = [s[0] for s in sites]
+    else:
+        # Staff only sees their assigned sites
+        user_sites = current_user.get_assigned_sites()
+    
+    # Get lesson settings for user's sites
+    lesson_settings = {}
+    for site in user_sites:
+        setting = SiteLessonSettings.query.filter_by(site=site).first()
+        if not setting:
+            # Create default setting if doesn't exist
+            setting = SiteLessonSettings(site=site, current_lesson=1, lesson_start_date=date(2026, 1, 24))
+            db.session.add(setting)
+            db.session.commit()
+        lesson_settings[site] = {
+            'current_lesson': setting.current_lesson,
+            'start_date': setting.lesson_start_date.strftime('%b %d, %Y') if setting.lesson_start_date else 'Not set'
+        }
+    
+    return render_template('scan.html', lesson_settings=lesson_settings)
 
 @attendance_bp.route('/record', methods=['POST'])
 @login_required
@@ -49,17 +74,28 @@ def record_attendance():
             'wrong_site': True
         }), 403
     
-    # Check if already scanned today (using Philippines time)
+    # Get current lesson for the kid's site
+    lesson_setting = SiteLessonSettings.query.filter_by(site=kid.site).first()
+    if not lesson_setting:
+        # Create default if not exists
+        lesson_setting = SiteLessonSettings(site=kid.site, current_lesson=1, lesson_start_date=date(2026, 1, 24))
+        db.session.add(lesson_setting)
+        db.session.commit()
+    
+    current_lesson = lesson_setting.current_lesson
+    
+    # Check if already scanned today for this lesson (using Philippines time)
     today = get_current_date()
     existing = Attendance.query.filter_by(
         kid_id=kid.id,
+        lesson=current_lesson,
         scan_date=today
     ).first()
     
     if existing:
         return jsonify({
             'success': False,
-            'message': f'{kid.full_name} already scanned today at {existing.scan_time.strftime("%I:%M %p")}',
+            'message': f'{kid.full_name} already scanned for Lesson {current_lesson} today at {existing.scan_time.strftime("%I:%M %p")}',
             'already_scanned': True
         }), 400
     
@@ -68,6 +104,7 @@ def record_attendance():
     attendance = Attendance(
         kid_id=kid.id,
         site=kid.site,
+        lesson=current_lesson,
         scan_date=now.date(),
         scan_time=now.time(),
         scanned_by=session['user_id']
@@ -78,10 +115,11 @@ def record_attendance():
     
     return jsonify({
         'success': True,
-        'message': f'✅ {kid.full_name} attendance recorded!',
+        'message': f'✅ {kid.full_name} - Lesson {current_lesson} recorded!',
         'kid_name': kid.full_name,
         'kid_age': kid.age,
         'site': kid.site,
+        'lesson': current_lesson,
         'time': now.strftime('%I:%M %p')
     }), 200
 
