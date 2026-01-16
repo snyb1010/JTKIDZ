@@ -17,7 +17,10 @@
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between py-4">
                 <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('dashboard') }}" class="text-2xl font-bold">JT KIDZ</a>
+                    <a href="{{ url_for('dashboard') }}" class="flex items-center space-x-2">
+                        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-10 w-10 rounded-full bg-white p-1" onerror="this.style.display='none'">
+                        <span class="text-2xl font-bold">JT KIDZ</span>
+                    </a>
                     {% if current_user_role == 'admin' %}
                     <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200">Kids</a>
                     <a href="{{ url_for('users.list_users') }}" class="hover:text-blue-200">Workers</a>
