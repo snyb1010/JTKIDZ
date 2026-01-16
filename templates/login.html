@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - JT KIDZ</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
 </head>
 <body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center">
     <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
         <div class="text-center mb-8">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-24 w-24 mx-auto mb-4 rounded-full" onerror="this.style.display='none'">
             <h1 class="text-4xl font-bold text-blue-600 mb-2">JT KIDZ</h1>
             <p class="text-gray-600">Barcode Attendance System</p>
         </div>
