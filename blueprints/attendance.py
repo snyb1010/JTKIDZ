@@ -44,7 +44,13 @@ def scan_page():
             'start_date': setting.lesson_start_date.strftime('%b %d, %Y') if setting.lesson_start_date else 'Not set'
         }
     
-    return render_template('scan.html', lesson_settings=lesson_settings)
+    # Default to current lesson or 1
+    default_lesson = 1
+    if lesson_settings and user_sites:
+        first_site = user_sites[0]
+        default_lesson = lesson_settings.get(first_site, {}).get('current_lesson', 1)
+    
+    return render_template('scan.html', lesson_settings=lesson_settings, default_lesson=default_lesson)
 
 @attendance_bp.route('/record', methods=['POST'])
 @login_required
@@ -52,9 +58,14 @@ def record_attendance():
     """API endpoint to record attendance from barcode scan"""
     data = request.get_json()
     barcode = data.get('barcode', '').strip().upper()
+    selected_lesson = data.get('lesson', 1)  # Get lesson from request
     
     if not barcode:
         return jsonify({'success': False, 'message': 'No barcode provided'}), 400
+    
+    # Validate lesson number
+    if not selected_lesson or selected_lesson < 1 or selected_lesson > 6:
+        return jsonify({'success': False, 'message': 'Invalid lesson number'}), 400
     
     # Find kid by barcode
     kid = Kid.query.filter_by(barcode=barcode).first()
@@ -74,28 +85,18 @@ def record_attendance():
             'wrong_site': True
         }), 403
     
-    # Get current lesson for the kid's site
-    lesson_setting = SiteLessonSettings.query.filter_by(site=kid.site).first()
-    if not lesson_setting:
-        # Create default if not exists
-        lesson_setting = SiteLessonSettings(site=kid.site, current_lesson=1, lesson_start_date=date(2026, 1, 24))
-        db.session.add(lesson_setting)
-        db.session.commit()
-    
-    current_lesson = lesson_setting.current_lesson
-    
     # Check if already scanned today for this lesson (using Philippines time)
     today = get_current_date()
     existing = Attendance.query.filter_by(
         kid_id=kid.id,
-        lesson=current_lesson,
+        lesson=selected_lesson,
         scan_date=today
     ).first()
     
     if existing:
         return jsonify({
             'success': False,
-            'message': f'{kid.full_name} already scanned for Lesson {current_lesson} today at {existing.scan_time.strftime("%I:%M %p")}',
+            'message': f'{kid.full_name} already scanned for Lesson {selected_lesson} today at {existing.scan_time.strftime("%I:%M %p")}',
             'already_scanned': True
         }), 400
     
@@ -104,7 +105,7 @@ def record_attendance():
     attendance = Attendance(
         kid_id=kid.id,
         site=kid.site,
-        lesson=current_lesson,
+        lesson=selected_lesson,
         scan_date=now.date(),
         scan_time=now.time(),
         scanned_by=session['user_id']
@@ -115,11 +116,11 @@ def record_attendance():
     
     return jsonify({
         'success': True,
-        'message': f'✅ {kid.full_name} - Lesson {current_lesson} recorded!',
+        'message': f'✅ {kid.full_name} - Lesson {selected_lesson} recorded!',
         'kid_name': kid.full_name,
         'kid_age': kid.age,
         'site': kid.site,
-        'lesson': current_lesson,
+        'lesson': selected_lesson,
         'time': now.strftime('%I:%M %p')
     }), 200
 

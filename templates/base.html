@@ -27,7 +27,6 @@
                     <a href="{{ url_for('users.list_users') }}" class="hover:text-blue-200">Workers</a>
                     <a href="{{ url_for('lessons.manage_lessons') }}" class="hover:text-blue-200">Lessons</a>
                     <a href="{{ url_for('reports.lesson_report') }}" class="hover:text-blue-200">Reports</a>
-                    <a href="{{ url_for('reports.attendance_summary') }}" class="hover:text-blue-200">Summary</a>
                     {% else %}
                     <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200">Kids</a>
                     {% endif %}

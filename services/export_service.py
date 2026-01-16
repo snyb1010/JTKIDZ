@@ -35,8 +35,10 @@ def get_age_group(age):
         return 'Kids (3-8)'
     elif 9 <= age <= 11:
         return 'Risers (9-11)'
-    elif 12 <= age <= 14:
-        return 'Teens (12-14)'
+    elif 12 <= age <= 13:
+        return 'Teens (12-13)'
+    elif age >= 14:
+        return 'Youth (14+)'
     else:
         return 'Other'
 

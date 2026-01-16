@@ -8,6 +8,48 @@
     <p class="text-gray-600">Manage lesson progress for all sites</p>
 </div>
 
+<!-- Lesson Timeline Calendar -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">📅 Lesson Schedule Timeline</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left font-semibold">Site</th>
+                    {% for i in range(1, 7) %}
+                    <th class="px-4 py-2 text-center font-semibold">Lesson {{ i }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in lesson_data %}
+                <tr class="border-t">
+                    <td class="px-4 py-2 font-medium">{{ data.site }}</td>
+                    {% for i in range(1, 7) %}
+                    <td class="px-4 py-2 text-center">
+                        {% if i < data.current_lesson %}
+                        <div class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                            ✓ Done
+                        </div>
+                        {% elif i == data.current_lesson %}
+                        <div class="inline-block bg-purple-100 text-purple-800 px-3 py-2 rounded">
+                            <div class="font-bold">Current</div>
+                            <div class="text-xs">{{ data.start_date.strftime('%b %d') if data.start_date else '-' }}</div>
+                        </div>
+                        {% else %}
+                        <div class="inline-block bg-gray-100 text-gray-400 px-2 py-1 rounded text-xs">
+                            Upcoming
+                        </div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for data in lesson_data %}
     <div class="bg-white rounded-lg shadow-md p-6">

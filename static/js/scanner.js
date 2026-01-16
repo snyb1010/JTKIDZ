@@ -45,13 +45,19 @@ function showMessage(message, type) {
 
 // Submit barcode to server
 async function submitBarcode(barcode) {
+    // Get selected lesson
+    const selectedLesson = parseInt(document.getElementById('lesson-selector').value);
+    
     try {
         const response = await fetch('/attendance/record', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ barcode: barcode.trim().toUpperCase() })
+            body: JSON.stringify({ 
+                barcode: barcode.trim().toUpperCase(),
+                lesson: selectedLesson
+            })
         });
         
         const data = await response.json();
@@ -63,7 +69,7 @@ async function submitBarcode(barcode) {
             showMessage(`
                 <div class="text-center">
                     <p class="text-2xl font-bold mb-2">✅ ${data.kid_name}</p>
-                    <p class="text-lg">Age: ${data.age} | Site: ${data.site}</p>
+                    <p class="text-lg">Lesson ${data.lesson} | Age: ${data.kid_age} | Site: ${data.site}</p>
                     <p class="text-xl font-bold mt-2">Time: ${timeStr}</p>
                 </div>
             `, 'success');
