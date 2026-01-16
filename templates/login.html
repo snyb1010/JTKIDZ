@@ -6,9 +6,106 @@
     <title>Login - JT KIDZ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: -1;
+        }
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .shape {
+            position: absolute;
+            opacity: 0.15;
+            animation: float 20s infinite ease-in-out;
+        }
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            top: 60%;
+            left: 80%;
+            animation-delay: 2s;
+        }
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            top: 30%;
+            left: 70%;
+            animation-delay: 4s;
+        }
+        .shape:nth-child(4) {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+            top: 70%;
+            left: 20%;
+            animation-delay: 1s;
+        }
+        .shape:nth-child(5) {
+            width: 110px;
+            height: 110px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            top: 20%;
+            left: 40%;
+            animation-delay: 3s;
+        }
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-30px) rotate(5deg);
+            }
+            50% {
+                transform: translateY(-60px) rotate(-5deg);
+            }
+            75% {
+                transform: translateY(-30px) rotate(3deg);
+            }
+        }
+        .login-container {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center">
-    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+<body class="flex items-center justify-center min-h-screen">
+    <div class="bg-animation">
+        <div class="floating-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+    </div>
+    
+    <div class="login-container bg-white rounded-lg shadow-2xl p-8 w-full max-w-md mx-4">
         <div class="text-center mb-8">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-24 w-24 mx-auto mb-4 rounded-full" onerror="this.style.display='none'">
             <h1 class="text-4xl font-bold text-blue-600 mb-2">JT KIDZ</h1>
@@ -47,8 +144,8 @@
             </button>
         </form>
 
-        <div class="mt-6 text-center text-gray-600 text-sm">
-            <p>Default Admin: admin@jtkidz.com / admin123</p>
+        <div class="mt-6 text-center text-gray-500 text-xs">
+            <p>&copy; 2026 JT KIDZ Ministry</p>
         </div>
     </div>
 </body>
