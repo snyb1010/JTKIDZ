@@ -6,33 +6,48 @@ A complete web-based barcode attendance system for JT KIDZ Ministry - a Christia
 
 ### Core Functionality
 - **Unique Barcode System**: Each child gets a CODE 128 barcode (format: JT000001, JT000002, etc.)
-- **Mobile Barcode Scanning**: Use phone camera to scan wristband barcodes
+- **Mobile Barcode Scanning**: Use phone camera to scan wristband barcodes with live preview
 - **Automatic Attendance Recording**: Instant attendance logging with duplicate prevention
+- **6 Lesson Tracking System**: Track progress across 6 lessons per site
 - **Multi-Site Support**: Track attendance across different barangays
 - **Role-Based Access**: Admin and Staff user roles with different permissions
+- **Mobile Responsive**: Hamburger menu navigation optimized for all devices
+- **Anti-Fraud Protection**: 2-second cooldown between scans to prevent abuse
 
 ### Admin Features
-- Add, edit, and deactivate kids
-- Generate and print barcodes for wristbands
-- View all attendance data
-- Generate site-based and monthly reports
-- Export reports to Excel (.xlsx)
-- Manage volunteer users
+- **Kid Management**: Add, edit, deactivate kids with profile pictures, gender, birthday
+- **Barcode Generation**: Generate and print barcodes for wristbands (bulk or individual)
+- **Bulk Import**: Import kids from Excel spreadsheet
+- **Lesson Management**: Track and advance lessons per site with quarterly calendar view
+- **Comprehensive Reports**: 
+  - Lesson progress reports with Chart.js visualizations
+  - Site-based and monthly attendance summaries
+  - Worker audit report to monitor scanning patterns
+  - Detailed attendance views per site/lesson
+- **Excel Export**: Export all reports to .xlsx format
+- **User Management**: Create and manage volunteer staff accounts with site assignments
+- **Worker Audit**: Monitor staff scanning patterns and detect suspicious activity
 
 ### Staff/Volunteer Features
-- Scan barcodes to record attendance
-- View daily attendance
-- Mobile-friendly interface
+- **Progressive Lesson Unlock**: Can only scan for lessons they've completed + next one
+- **Barcode Scanner**: Mobile-optimized camera scanning with manual entry fallback
+- **Lesson Selection**: Choose which lesson to record attendance for
+- **Daily View**: View attendance filtered by date and lesson
+- **Site-Filtered Dashboard**: See only kids from assigned sites
+- **Mobile-First Interface**: Touch-friendly navigation and controls
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python Flask
+- **Backend**: Python Flask 3.0+
 - **Frontend**: HTML, Tailwind CSS, JavaScript
-- **Database**: SQLite (development) / MySQL (production-ready)
-- **Barcode Generation**: python-barcode library (CODE 128)
-- **Barcode Scanner**: html5-qrcode (JavaScript camera-based)
-- **Excel Export**: pandas, openpyxl
-- **Authentication**: Flask sessions with password hashing
+- **Database**: SQLite (with automatic migrations)
+- **Barcode Generation**: python-barcode 0.15.0 (CODE 128)
+- **Barcode Scanner**: html5-qrcode 2.3.8 (JavaScript camera-based)
+- **Excel Export**: pandas 2.3+, openpyxl 3.1+
+- **Charts**: Chart.js 4.4.0 for lesson progress visualization
+- **Image Processing**: Pillow 10.0+ for profile pictures
+- **Timezone**: pytz 2025.2 (Asia/Manila UTC+8)
+- **Authentication**: Flask sessions with Werkzeug password hashing
 
 ## 📦 Installation
 
@@ -57,15 +72,17 @@ A complete web-based barcode attendance system for JT KIDZ Ministry - a Christia
 
 4. **Initialize database and seed sample data**
    ```bash
-   python seed.py
+   pythondatabase migrations** (if deploying lesson features)
+   ```bash
+   python migrate_add_lessons.py
    ```
 
-5. **Run the application**
+6. **Run the application**
    ```bash
    python app.py
    ```
 
-6. **Access the application**
+7. **Access the application**
    Open your browser and go to: `http://localhost:5000`
 
 ## 🔐 Default Credentials
@@ -75,21 +92,58 @@ After running `seed.py`, use these credentials:
 - **Admin Account**
   - Email: `admin@jtkidz.com`
   - Password: `admin123`
+  - **⚠️ CHANGE PASSWORD IMMEDIATELY AFTER FIRST LOGIN**
 
+## 🔄 Database Management
+
+### Reset Database (Fresh Start)
+```bash
+python reset_database.py
+```
+- Creates automatic backup with timestamp
+- Clears all kids, attendance, and staff users
+- Keeps admin user with reset password (admin123)
+- Perfect for testing or starting fresh
+
+### Check Database Status
+```bash
+python check_db.py
+```
+- View current users, kids, and attendance records
+- Quick verification after migrations or resets
 - **Staff Account**
   - Email: `staff@jtkidz.com`
   - Password: `staff123`
+Lesson Report (NEW!)
+- **Overview**: Track attendance progress across all 6 lessons
+- **Chart Visualization**: Bar graphs showing completion rates per lesson
+- **Site Filtering**: View specific site or all sites
+- **Lesson Details**: Clickable sites show detailed attendance per lesson
+- **Color Coded**: Current lesson (purple), completed (green), upcoming (gray)
+- **Export to Excel**: Download detailed attendance with lesson filtering
 
-## 📱 Mobile Usage
+### Worker Audit Report (Admin Only)
+- **Monitor Staff Activity**: Track scanning patterns per worker
+- **Fraud Detection**: Automatic flagging of suspicious rapid scans (<2 seconds)
+- **Statistics**: Total scans, rapid scans, days active, average per day
+- **Recent History**: View last 10 scans per worker
+- **Date Range Filter**: Analyze activity over custom time periods
 
-The system is mobile-first and works great on:
-- Android phones (Chrome, Firefox)
-- iOS devices (Safari, Chrome)
-- Desktop browsers
+### Site Report
+- Filter by barangay/site and date range
+- View total attendance, unique kids, and attendance rate
+- Export to Excel with age group breakdown
 
-### Scanning Instructions
-1. Login to the system
-2. Navigate to "Scan" page
+### Monthly Report
+- View attendance summary per child for a specific month
+- Color-coded attendance counts (Green: 3+, Yellow: 1-2, Red: 0)
+- Filter by site and export to Excel
+
+### Today's Attendance
+- **Lesson Filter**: View attendance for specific lessons
+- **Real-time Updates**: See scans as they happen
+- **Mobile Responsive**: Works great on phones
+- **Staff View**: Filtered to assigned sites onlycan" page
 3. Allow camera access when prompted
 4. Point camera at barcode on wristband
 5. Attendance is automatically recorded
@@ -105,37 +159,53 @@ If camera scanning doesn't work, you can manually enter the barcode (e.g., JT000
 - View total attendance, unique kids, and attendance rate
 - Export to Excel
 
-### Monthly Report
-- View attendance summary per child for a specific month
-- Color-coded attendance counts (Green: 3+, Yellow: 1-2, Red: 0)
-- Filter by site
-- Export to Excel
-
-## 🖨️ Printing Barcodes
-
-1. Login as admin
-2. Go to "Kids" → Select a kid → View Barcode
-3. Click "Print" button
-4. For bulk printing: "Kids" → "Print Barcodes" (prints all active kids)
-
-**Recommended**: Print barcodes on adhesive labels and attach to wristbands or ballers.
-
-## 📁 Project Structure
-
-```
-JTKIDZ/
-├── app.py                 # Main Flask application
-├── config.py             # Configuration settings
-├── database.py           # Database initialization
-├── models.py             # SQLAlchemy models (User, Kid, Attendance)
-├── seed.py               # Database seeding script
-├── requirements.txt      # Python dependencies
-├── blueprints/           # Flask blueprints
-│   ├── auth.py          # Authentication routes
-│   ├── kids.py          # Kids CRUD routes
-│   ├── attendance.py    # Attendance scanning routes
-│   └── reports.py       # Reporting routes
-├── services/            # Business logic services
+### Monthly Report         # Main Flask application
+├── config.py                       # Configuration settings
+├── database.py                     # Database initialization
+├── models.py                       # SQLAlchemy models (User, Kid, Attendance, SiteLessonSettings)
+├── seed.py                         # Database seeding script
+├── reset_database.py               # Database reset with backup
+├── check_db.py                     # Database verification tool
+├── migrate_add_lessons.py          # Lesson system migration
+├── requirements.txt                # Python dependencies
+├── wsgi.py                         # WSGI entry point for production
+├── blueprints/                     # Flask blueprints
+│   ├── auth.py                    # Authentication routes
+│   ├── kids.py                    # Kids CRUD + bulk import
+│   ├── attendance.py              # Barcode scanning + anti-fraud
+│   ├── reports.py                 # All reporting routes
+│   ├── users.py                   # User management
+│   └── lessons.py                 # Lesson tracking management
+├── services/                       # Business logic services
+│   ├── barcode_service.py         # CODE 128 barcode generation
+│   └── export_service.py          # Excel export with lesson filtering
+├── templates/                      # HTML templates (mobile responsive)
+│   ├── base.html                  # Base template with hamburger nav
+│   ├── login.html                 # Animated login page
+│   ├── dashboard.html             # Main dashboard with stats
+│   ├── kids_list.html             # Kids management with filters
+│   ├── kids_bulk_import.html      # Excel import interface
+│   ├── kid_form.html              # Add/edit kid with profile pic
+│   ├── barcode_print.html         # Barcode printing layout
+│   ├── scan.html                  # Mobile barcode scanner
+│   ├── attendance_today.html      # Daily attendance with lesson filter
+│   ├── lessons_manage.html        # Quarterly calendar view
+│   ├── reports_lesson.html        # Lesson progress with charts
+│   ├── reports_lesson_detail.html # Detailed site/lesson attendance
+│   ├── reports_worker_audit.html  # Staff monitoring report
+│   ├── reports_site.html          # Site-based reports
+│   ├── reports_monthly.html       # Monthly summary reports
+│   ├── user_form.html             # Add/edit users
+│   └── users_list.html            # User management list
+├── static/
+│   ├── js/
+│   │   └── scanner.js             # html5-qrcode integration
+│   └── img/
+│       ├── logo.png               # JT KIDZ logo
+│       ├── barcodes/              # Generated barcode images
+│       └── profiles/              # Kid profile pictures
+└── instance/
+    └── jtkidz.db                  # SQLite database (auto-creat
 │   ├── barcode_service.py    # Barcode generation
 │   └── export_service.py     # Excel export
 ├── templates/           # HTML templates
@@ -225,7 +295,13 @@ git clone https://github.com/yourusername/JTKIDZ.git
 cd JTKIDZ
 ```
 
-**Option B: Manual Upload**
+python migrate_add_lessons.py
+```
+
+### Step 4.5: Upload Logo (Optional)
+1. Go to **Files** tab
+2. Navigate to `/home/yourusername/JTKIDZ/static/img/`
+3. Upload your `logo.png` file (recommended: 512x512px, circular design)ption B: Manual Upload**
 - Use PythonAnywhere's **Files** tab
 - Create folder: `/home/yourusername/JTKIDZ`
 - Upload all project files there
@@ -297,10 +373,13 @@ python -c "import secrets; print(secrets.token_hex(32))"
 1. Click the big green **Reload** button at the top
 2. Visit `https://yourusername.pythonanywhere.com`
 3. Login with:
-   - **Email:** `admin@jtkidz.com`
-   - **Password:** `admin123`
-
-### 🔒 Post-Deployment Security
+   - **Email:** `admin@jtkidz.com` (go to Users → Edit admin)
+- [ ] Set a strong SECRET_KEY environment variable
+- [ ] Upload JT KIDZ logo to `/static/img/logo.png`
+- [ ] Test barcode scanning on a mobile device
+- [ ] Add volunteer staff accounts with site assignments
+- [ ] Set up initial sites and lesson dates
+- [ ] Test lesson progression and worker audit feature
 
 **IMMEDIATELY after first login:**
 - [ ] Change the default admin password
@@ -310,14 +389,26 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ### 📱 Mobile Access for Volunteers
 
-Volunteers can access the scanner at:
-```
-https://yourusername.pythonanywhere.com/scan
+Volunteers can access locally and want to deploy:
+
+**Local (Development):**
+```bash
+git add .
+git commit -m "Your update message"
+git push origin main
 ```
 
-Bookmark this on their phones for quick access.
+**PythonAnywhere (Production):**
+```bash
+cd ~/JTKIDZ
+git pull origin main
+source venv/bin/activate
+pip install -r requirements.txt  # if new dependencies
+# Run any new migrations if needed
+# Go to Web tab and click Reload
+```
 
-### 🔄 Updating the App
+**Note:** Always test updates locally before deploying to production! 🔄 Updating the App
 
 When you make changes:
 ```bash
