@@ -49,6 +49,7 @@
                 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-4">
+                    <a href="{{ url_for('dashboard') }}" class="hover:text-blue-200 px-2 py-1">Home</a>
                     {% if current_user_role == 'admin' %}
                     <a href="{{ url_for('kids.list_kids') }}" class="hover:text-blue-200 px-2 py-1">Kids</a>
                     <a href="{{ url_for('users.list_users') }}" class="hover:text-blue-200 px-2 py-1">Workers</a>
@@ -78,6 +79,7 @@
             <!-- Mobile Navigation Menu -->
             <div id="mobile-menu" class="mobile-menu md:hidden">
                 <div class="py-2 space-y-1 border-t border-blue-500">
+                    <a href="{{ url_for('dashboard') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Home</a>
                     {% if current_user_role == 'admin' %}
                     <a href="{{ url_for('kids.list_kids') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Kids</a>
                     <a href="{{ url_for('users.list_users') }}" class="block hover:bg-blue-700 px-4 py-2 rounded">Workers</a>
