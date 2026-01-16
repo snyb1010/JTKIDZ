@@ -164,7 +164,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(text, 'text/html');
             const rows = doc.querySelectorAll('tbody tr');
-            todayCount = rows.length;
+            // Only count rows that don't have colspan (actual data rows)
+            todayCount = Array.from(rows).filter(row => !row.querySelector('td[colspan]')).length;
             document.getElementById('today-count').textContent = todayCount;
         }
     } catch (error) {
