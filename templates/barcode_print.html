@@ -94,10 +94,24 @@
 {% endif %}
 
 <style>
+    /* Force print background colors */
+    .bg-blue-100, .bg-pink-100 {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+    
     @media print {
-        body { background: white; }
         .grid { gap: 10px; }
         .shadow-md { box-shadow: none !important; }
+        
+        /* Ensure backgrounds print */
+        .bg-blue-100 {
+            background-color: #dbeafe !important;
+        }
+        .bg-pink-100 {
+            background-color: #fce7f3 !important;
+        }
     }
 </style>
 
