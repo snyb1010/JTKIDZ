@@ -6,6 +6,11 @@
 <div class="no-print mb-6 flex justify-between items-center">
     <h1 class="text-3xl font-bold text-gray-800">{% if bulk %}Bulk Barcodes for Printing{% else %}Barcode - {{ kid.full_name }}{% endif %}</h1>
     <div class="space-x-2">
+        {% if not bulk %}
+        <button onclick="downloadBarcode()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg">
+            📥 Download PNG
+        </button>
+        {% endif %}
         <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">
             🖨️ Print
         </button>
@@ -64,7 +69,7 @@
     </div>
 {% else %}
     <div class="max-w-md mx-auto">
-        <div class="{% if kid.gender == 'Male' %}bg-blue-100{% elif kid.gender == 'Female' %}bg-pink-100{% else %}bg-white{% endif %} rounded-lg shadow-md p-8 text-center">
+        <div id="barcode-card" class="{% if kid.gender == 'Male' %}bg-blue-100{% elif kid.gender == 'Female' %}bg-pink-100{% else %}bg-white{% endif %} rounded-lg shadow-md p-8 text-center">
             <div class="flex justify-center mb-4">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-16 w-auto">
             </div>
@@ -95,4 +100,26 @@
         .shadow-md { box-shadow: none !important; }
     }
 </style>
+
+{% if not bulk %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function downloadBarcode() {
+    const card = document.getElementById('barcode-card');
+    const filename = '{{ kid.barcode }}_{{ kid.full_name.replace(" ", "_") }}.png';
+    
+    html2canvas(card, {
+        scale: 2,
+        backgroundColor: null,
+        logging: false,
+        useCORS: true
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+}
+</script>
+{% endif %}
 {% endblock %}
