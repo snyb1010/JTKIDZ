@@ -87,13 +87,13 @@ class Kid(db.Model):
         """Return age group category"""
         current_age = self.age
         if 3 <= current_age <= 8:
-            return 'Kids (3-8)'
+            return 'Kids (3-8 yrs old)'
         elif 9 <= current_age <= 11:
-            return 'Risers (9-11)'
-        elif 12 <= current_age <= 13:
-            return 'Teens (12-13)'
-        elif current_age >= 14:
-            return 'Youth (14+)'
+            return 'Risers (9-11 yrs old)'
+        elif 12 <= current_age <= 14:
+            return 'Teens (12-14 yrs old)'
+        elif current_age >= 15:
+            return 'Youth (15+ years old)'
         else:
             return 'Other'
     

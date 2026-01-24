@@ -48,7 +48,10 @@
     <!-- Barcodes Grid -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
         {% for k in kids %}
-        <div class="bg-white rounded-lg shadow-md p-4 text-center border-2 border-gray-200">
+        <div class="{% if k.gender == 'Male' %}bg-blue-100{% elif k.gender == 'Female' %}bg-pink-100{% else %}bg-white{% endif %} rounded-lg shadow-md p-4 text-center border-2 border-gray-200">
+            <div class="flex justify-center mb-2">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-12 w-auto">
+            </div>
             <h3 class="font-bold text-lg mb-2">{{ k.full_name }}</h3>
             <p class="text-sm text-gray-600 mb-2">{{ k.site }} • Age {{ k.age }} • {{ k.gender }}</p>
             <img src="{{ url_for('static', filename='img/barcodes/' ~ k.barcode ~ '_' ~ k.full_name.replace(' ', '_') ~ '.png') }}" 
@@ -61,7 +64,10 @@
     </div>
 {% else %}
     <div class="max-w-md mx-auto">
-        <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <div class="{% if kid.gender == 'Male' %}bg-blue-100{% elif kid.gender == 'Female' %}bg-pink-100{% else %}bg-white{% endif %} rounded-lg shadow-md p-8 text-center">
+            <div class="flex justify-center mb-4">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="JT KIDZ Logo" class="h-16 w-auto">
+            </div>
             <h2 class="text-2xl font-bold mb-2">{{ kid.full_name }}</h2>
             <p class="text-gray-600 mb-4">{{ kid.site }} • Age {{ kid.age }}</p>
             
