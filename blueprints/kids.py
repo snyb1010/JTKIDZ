@@ -368,10 +368,6 @@ def export_barcodes_pdf():
         else:
             pdf.setFont("Helvetica", 8)
             pdf.drawString(x + 0.5*inch, y + 1.3*inch, "Barcode not generated")
-                            width=2*inch, height=1*inch, preserveAspectRatio=True, mask='auto')
-            except:
-                pdf.setFont("Helvetica", 8)
-                pdf.drawString(x + 0.5*inch, y + 1.3*inch, "Barcode not generated")
         
         # Draw barcode number
         pdf.setFont("Courier-Bold", 10)
