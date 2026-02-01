@@ -8,8 +8,8 @@ users_bp = Blueprint('users', __name__, url_prefix='/users')
 @users_bp.route('/')
 @admin_required
 def list_users():
-    """List all staff users"""
-    users = User.query.filter_by(role='staff').order_by(User.name).all()
+    """List all users (admin and staff)"""
+    users = User.query.order_by(User.role.desc(), User.name).all()  # Admin first, then staff
     
     # Parse assigned sites for display
     for user in users:
