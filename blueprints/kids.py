@@ -276,6 +276,8 @@ def bulk_barcodes():
 @admin_required
 def export_barcodes_pdf():
     """Export barcodes to PDF based on current sorting/filtering"""
+    from flask import current_app
+    
     sort_by = request.args.get('sort', 'site')
     site_filter = request.args.get('site', '')
     
@@ -314,8 +316,8 @@ def export_barcodes_pdf():
     current_x_idx = 0
     current_y = y_start
     
-    # Logo path
-    logo_path = os.path.join('static', 'img', 'logo.png')
+    # Logo path - use absolute path from Flask app root
+    logo_path = os.path.join(current_app.root_path, 'static', 'img', 'logo.png')
     
     for kid in kids:
         x = x_positions[current_x_idx]
@@ -323,9 +325,9 @@ def export_barcodes_pdf():
         
         # Draw background color based on gender
         if kid.gender == 'Male':
-            pdf.setFillColorRGB(0.4, 0.6, 0.95)  # Royal blue
+            pdf.setFillColorRGB(0.38, 0.65, 0.96)  # Royal blue
         elif kid.gender == 'Female':
-            pdf.setFillColorRGB(0.98, 0.6, 0.85)  # Royal pink
+            pdf.setFillColorRGB(0.96, 0.45, 0.71)  # Royal pink
         else:
             pdf.setFillColorRGB(1, 1, 1)  # White
         
@@ -336,8 +338,8 @@ def export_barcodes_pdf():
             try:
                 pdf.drawImage(logo_path, x + card_width/2 - 0.4*inch, y + card_height - 0.6*inch, 
                             width=0.8*inch, height=0.4*inch, preserveAspectRatio=True, mask='auto')
-            except:
-                pass
+            except Exception as e:
+                print(f"Logo error: {e}")
         
         # Draw kid name (black text)
         pdf.setFillColorRGB(0, 0, 0)
@@ -351,13 +353,21 @@ def export_barcodes_pdf():
         text_width = pdf.stringWidth(info_text, "Helvetica", 9)
         pdf.drawString(x + (card_width - text_width)/2, y + card_height - 1.15*inch, info_text)
         
-        # Draw barcode image if exists
+        # Draw barcode image if exists - use absolute path
         barcode_filename = f"{kid.barcode}_{kid.full_name.replace(' ', '_')}.png"
-        barcode_path = os.path.join('static', 'img', 'barcodes', barcode_filename)
+        barcode_path = os.path.join(current_app.root_path, 'static', 'img', 'barcodes', barcode_filename)
         
         if os.path.exists(barcode_path):
             try:
                 pdf.drawImage(barcode_path, x + 0.25*inch, y + 0.8*inch,
+                            width=2*inch, height=1*inch, preserveAspectRatio=True, mask='auto')
+            except Exception as e:
+                print(f"Barcode error for {kid.barcode}: {e}")
+                pdf.setFont("Helvetica", 8)
+                pdf.drawString(x + 0.5*inch, y + 1.3*inch, "Barcode error")
+        else:
+            pdf.setFont("Helvetica", 8)
+            pdf.drawString(x + 0.5*inch, y + 1.3*inch, "Barcode not generated")
                             width=2*inch, height=1*inch, preserveAspectRatio=True, mask='auto')
             except:
                 pdf.setFont("Helvetica", 8)
