@@ -52,12 +52,8 @@ def add_user():
 @users_bp.route('/edit/<int:user_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_user(user_id):
-    """Edit staff user"""
+    """Edit user (admin or staff)"""
     user = User.query.get_or_404(user_id)
-    
-    if user.role == 'admin':
-        flash('Cannot edit admin user!', 'error')
-        return redirect(url_for('users.list_users'))
     
     if request.method == 'POST':
         user.name = request.form.get('name')
@@ -69,10 +65,12 @@ def edit_user(user_id):
         if password:
             user.set_password(password)
         
-        user.set_assigned_sites(assigned_sites)
+        # Only update sites for staff (admin doesn't need site assignment)
+        if user.role == 'staff':
+            user.set_assigned_sites(assigned_sites)
         
         db.session.commit()
-        flash(f'Worker {user.name} updated successfully!', 'success')
+        flash(f'User {user.name} updated successfully!', 'success')
         return redirect(url_for('users.list_users'))
     
     # Get all available sites
