@@ -8,6 +8,11 @@ from werkzeug.utils import secure_filename
 import os
 import pandas as pd
 import tempfile
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from io import BytesIO
 
 kids_bp = Blueprint('kids', __name__, url_prefix='/kids')
 
@@ -266,6 +271,124 @@ def bulk_barcodes():
     
     return render_template('barcode_print.html', kids=kids, bulk=True, 
                           current_sort=sort_by, sites=sites, current_site=site_filter)
+
+@kids_bp.route('/barcodes/export-pdf')
+@admin_required
+def export_barcodes_pdf():
+    """Export barcodes to PDF based on current sorting/filtering"""
+    sort_by = request.args.get('sort', 'site')
+    site_filter = request.args.get('site', '')
+    
+    query = Kid.query.filter_by(status='active')
+    
+    # Filter by site if specified
+    if site_filter:
+        query = query.filter_by(site=site_filter)
+    
+    kids = query.all()
+    
+    # Sort kids based on parameter
+    if sort_by == 'barcode':
+        kids = sorted(kids, key=lambda k: k.barcode)
+    elif sort_by == 'gender':
+        kids = sorted(kids, key=lambda k: (k.gender or 'ZZZ', k.full_name))
+    elif sort_by == 'age':
+        kids = sorted(kids, key=lambda k: (k.age, k.full_name))
+    else:  # default: name
+        kids = sorted(kids, key=lambda k: k.full_name)
+    
+    # Create PDF in memory
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Set up layout (3 columns, multiple rows)
+    card_width = 2.5 * inch
+    card_height = 3 * inch
+    margin = 0.5 * inch
+    cols = 3
+    
+    x_positions = [margin, margin + card_width, margin + 2 * card_width]
+    y_start = height - margin - card_height
+    
+    current_x_idx = 0
+    current_y = y_start
+    
+    # Logo path
+    logo_path = os.path.join('static', 'img', 'logo.png')
+    
+    for kid in kids:
+        x = x_positions[current_x_idx]
+        y = current_y
+        
+        # Draw background color based on gender
+        if kid.gender == 'Male':
+            pdf.setFillColorRGB(0.4, 0.6, 0.95)  # Royal blue
+        elif kid.gender == 'Female':
+            pdf.setFillColorRGB(0.98, 0.6, 0.85)  # Royal pink
+        else:
+            pdf.setFillColorRGB(1, 1, 1)  # White
+        
+        pdf.rect(x, y, card_width, card_height, fill=1, stroke=1)
+        
+        # Draw logo if exists
+        if os.path.exists(logo_path):
+            try:
+                pdf.drawImage(logo_path, x + card_width/2 - 0.4*inch, y + card_height - 0.6*inch, 
+                            width=0.8*inch, height=0.4*inch, preserveAspectRatio=True, mask='auto')
+            except:
+                pass
+        
+        # Draw kid name (black text)
+        pdf.setFillColorRGB(0, 0, 0)
+        pdf.setFont("Helvetica-Bold", 12)
+        text_width = pdf.stringWidth(kid.full_name, "Helvetica-Bold", 12)
+        pdf.drawString(x + (card_width - text_width)/2, y + card_height - 0.9*inch, kid.full_name)
+        
+        # Draw site, age, gender info
+        pdf.setFont("Helvetica", 9)
+        info_text = f"{kid.site} • Age {kid.age} • {kid.gender}"
+        text_width = pdf.stringWidth(info_text, "Helvetica", 9)
+        pdf.drawString(x + (card_width - text_width)/2, y + card_height - 1.15*inch, info_text)
+        
+        # Draw barcode image if exists
+        barcode_filename = f"{kid.barcode}_{kid.full_name.replace(' ', '_')}.png"
+        barcode_path = os.path.join('static', 'img', 'barcodes', barcode_filename)
+        
+        if os.path.exists(barcode_path):
+            try:
+                pdf.drawImage(barcode_path, x + 0.25*inch, y + 0.8*inch,
+                            width=2*inch, height=1*inch, preserveAspectRatio=True, mask='auto')
+            except:
+                pdf.setFont("Helvetica", 8)
+                pdf.drawString(x + 0.5*inch, y + 1.3*inch, "Barcode not generated")
+        
+        # Draw barcode number
+        pdf.setFont("Courier-Bold", 10)
+        text_width = pdf.stringWidth(kid.barcode, "Courier-Bold", 10)
+        pdf.drawString(x + (card_width - text_width)/2, y + 0.5*inch, kid.barcode)
+        
+        # Move to next position
+        current_x_idx += 1
+        if current_x_idx >= cols:
+            current_x_idx = 0
+            current_y -= card_height
+            
+            # Check if we need a new page
+            if current_y < margin:
+                pdf.showPage()
+                current_y = y_start
+    
+    # Save PDF
+    pdf.save()
+    buffer.seek(0)
+    
+    # Generate filename
+    filename = f"JT_KIDZ_Barcodes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    if site_filter:
+        filename = f"JT_KIDZ_Barcodes_{site_filter}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    return send_file(buffer, mimetype='application/pdf', as_attachment=True, download_name=filename)
 
 @kids_bp.route('/bulk-import', methods=['GET', 'POST'])
 @admin_required
